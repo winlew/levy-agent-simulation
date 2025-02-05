@@ -1,0 +1,14 @@
+from pathlib import Path
+import multiprocessing as mp
+
+# x, y, direction, perception_radius
+NUM_MOTION_ATTRIBUTES = 4
+
+PROJECT_ROOT_PATH = Path(__file__).parent.parent
+DATA_PATH = PROJECT_ROOT_PATH / 'data'
+
+MAX_FOOD_GENERATION_ATTEMPTS = 1000
+
+INTERVALL_SAVE = 100
+
+MAX_PROCESSES = min(mp.cpu_count(), 5)

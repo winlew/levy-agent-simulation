@@ -1,0 +1,35 @@
+{
+    "agent": {
+        "noise_neuron": true,
+        "hidden_size": 2,
+        "input_size": 3,
+        "output_size": 3,
+        "eat_radius": 0.5,
+        "slow_velocity": 1,
+        "fast_velocity": 1,
+        "slow_perception_radius": 3,
+        "fast_perception_radius": 0
+    },
+    "environment": {
+        "num_food": 100,
+        "size": 100,
+        "border_buffer": 5,
+        "food_buffer": 5,
+        "empty": false
+    },
+    "evolution": {
+        "population_size": 100,
+        "elite_fraction": 0.4,
+        "mutation_fraction": 0.4,
+        "mutation_rate": 0.1,
+        "mutation_strength": 0.1,
+        "tolerance": 0.1,
+        "train_mode": true
+    },
+    "simulation": {
+        "total_time": 9,
+        "delta_t": 1,
+        "num_epochs": 30,
+        "iterations_per_epoch": 3
+    }
+}
