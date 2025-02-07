@@ -1,15 +1,62 @@
 # Lévy Agent Simulation
-Simulate foraging behaviour of simple agents controlled by a recurrent neural network model
-in a 2D environment. \
+Simulate foraging behaviour of simple autonomous agents in a 2D environment. \
 Analyse under which circumstances the agents develop Lévy Walk like motion patterns.
 
-# Project Set Up
-Create a virtual environment, then install the required packages
+## Set Up
+Create a folder for the project
 
-    python3 -m venv levy-agent-simulation
-    source levy-agent-simulation/bin/activate
+```mkdir levy-agent-simulation```
 
-# Parameters
+Clone the github repository
+
+```git clone git@github.com:winlew/levy-agent-simulation.git```
+
+Create a virtual environment and install the required packages
+
+```python3 -m venv levy-agent-simulation```\
+```source levy-agent-simulation/bin/activate```
+
+Run a simulation by executing main.py.
+
+## Environment
+The environment is the area in which the simulation takes place.
+- has periodic boundaries
+- contains randomly distributed food particles
+
+## Agent Architecture and Model
+The positioning of the agent in the environment is described by
+- its 2D position
+- the direction it faces
+
+The behavior of the agent is controlled by a hybrid 3 layer neural network
+- input layer
+  - velocity mode (0: slow, 1: fast)
+  - direction to food particle in ego perspective (-pi to pi)
+  - proximity to food particle (0: out of perception radius, 1: within perception radius)
+  - optional noise neuron
+- recurrent hidden layer
+- fully connected output layer
+  - velocity mode (0: slow, 1: fast)
+  - steering command (0: keep direction, 1: turn)
+  - angle to turn in ego perspective (-pi to pi)
+
+## Training
+Agents are trained by an evolutionary algorithm. Each epoch the next generation is assembled from
+- elites
+  - best performing fraction of population
+  - small weights are set to zero
+- mutated
+  - random chosen agent that is mutated
+  - small weights are set to zero
+- crossovers
+  - between elites and mutated
+
+## Simulation
+Each simulation runs for a certain number of epochs.
+In each epoch the performance of each agent is evaluated for a designated number of iterations where each iteration simulates agent behavior for a limited number of time steps.
+At the end of each epoch the current population is exchanged with the next.
+Simulations are configured by the parameters.json file. Here a detailed explanation of the purpose of each parameter:
+
 Agent 
 - input_size (int): number of input neurons (constant)
 - hidden_size (int): number of hidden neurons 
@@ -20,16 +67,12 @@ Agent
 - fast_velocity (float): velocity of the agent in fast mode
 - slow_perception_radius (float): perception radius of the agent in slow mode
 - fast_perception_radius (float): perception radius of the agent in fast mode
-- num_food (int): number of food particles in the environment# slow_velocity = 1
 
 Environment 
 - size (int): size of the environment
-- num_food (int): number of food particles
+- num_food (int): number of food particles in the environment
 - border_buffer (float): minimum distance between food particles and the border of the environment
-    ~10% of the environment size
-- food_buffer (float): minimum distance between food particles# size = 200
-    choose as max(fast_perception_radius, slow_perception_radius) + eat_radius so that agents cannot
-    'see' next food item from current one 
+- food_buffer (float): minimum distance between food particles choose as max(fast_perception_radius, slow_perception_radius) + eat_radius so that agents cannot 'see' next food item from current one 
 - empty (bool): if true, no food particles are spawned into the environment
 
 Evolution
@@ -37,7 +80,7 @@ Evolution
 - elite_fraction (float): fraction of the best performing agents that will be copied to the next generation
 - mutation_fraction (float): fraction of the population that will be mutated
 - mutation_rate (float): probability of a weight being mutated
-- mutation_strength (float): strength of the mutation
+- mutation_strength (float): amplitude of the mutation
 - tolerance (float): tolerance value to set weights
 - train_mode (bool): whether evolution is enabled or not
 
@@ -49,65 +92,43 @@ Simulation
 - population (int): number of agents in the population
 - load_simulation (bool): population is saved after the simulation is over and can be loaded by setting this to true
 
-TODO only store the past simulation.
+### Perspectives
+There are two types of perspectives used in the project
+- ego perspective $[-\pi, \pi]$
+- world perspective $[0, 2\pi]$
+  
+Agents view the world in ego perspective, why they are placed inside the environment by using world perspective.
+For ego perspective:
+- clockwise is negative and
+- counter-clockwise is positive
 
-In each epoch the agents are evaluated iterations_per_epoch times.
-And in each iteration the agent behaviour is simulated simulation_steps times
+# Coding Standards
+Conventions to ensure consistency in the project. 
+Regarding the structure I tried to modularize by files. All parameters are collected in the parameter class but each class only extracts the parameters it needs.
+- Docstring format inspired by Google:
 
-# Coding Conventions
-Docstring format inspired by Google:
-
+```
     """
-    This is an example of Google style.
+    This is an example.
 
     Args:
-        param1: This is the first param.
-        param2: This is a second param.
+        param1 (type): This is the first param.
+        param2 (type): This is a second param.
 
     Returns:
-        This is a description of what is returned.
+        value (type): This is a description of what is returned.
 
     Raises:
         KeyError: Raises an exception.
     """
+```
 
-Naming:
-- function_name
-- variable_name
-- ClassName
+- Naming:
+  - function_name
+  - variable_name
+  - ClassName
 
-Abbreviations:
-- num: number
-- params: parameters
-- Rnn: Recurrent Neural Network
-
-Structure Rules:
-- modularization by files
-- all parameters are collected in the parameter class
-- each class extracts only the parameters that it needs itself
-
-Notes:
-Tried switching to gpu, but this actually seems to increase computation time.
-Reasons for why gpu acceleration might not work:
-- no batch processing
-- small neural networks that are called very often
-- device overhead is quite large 
-
-BUGS:
-- animation function is using multiprocessing, pay attention to modules that are not thread safe
-  - tkinter for example
-  - or matplotlib
-- can cause errors like this:
-  - "
-    X connection to :1 broken (explicit kill or server shutdown).
-        XIO:  fatal IO error 0 (Success) on X server ":1"
-        after 183 requests (183 known processed) with 2 events remaining.
-    "
-
-#TODO
-- agent model description
-- ego and world perspective description
-    clockwise is negative
-    counter-clockwise is positive
-    When the difference is exactly pi, it is always negative. 
-    In ego perspective this does not matter, it is just because of the way the function is defined
+- Abbreviations:
+  - num: number
+  - params: parameters
+  - Rnn: Recurrent Neural Network
