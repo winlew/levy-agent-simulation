@@ -7,7 +7,7 @@ import pygame
 
 class Environment:
     """
-    A 2D environment with food particles and periodic boundary conditions.
+    A quadratic 2D environment with food particles and periodic boundary conditions.
     - generates the positions of the food particles
     - finds the closest food particle to an agent
     """
@@ -29,6 +29,7 @@ class Environment:
             self.food_positions = self.generate_food_positions(params.border_buffer, params.food_buffer)
         
         self.walls = []
+        # TODO do not do this in the class definition
         # self.add_wall(np.array([0, 0]), np.array([self.size, self.size]))
     
     def add_wall(self, start, end):
@@ -98,7 +99,8 @@ class Environment:
         """
 
         # blind agent does not see anything
-        if agent.perception_radius == 0 or self.food_positions.size == 0:
+        # eat radius matters as well!
+        if self.food_positions.size == 0:
             return None, None, None
 
         dx = np.abs(self.food_positions[:, 0] - agent.position[0])
@@ -110,7 +112,7 @@ class Environment:
         distances = np.sqrt(dx**2 + dy**2)
 
         # filter for visible and unconsumed food
-        in_range = (distances < agent.perception_radius) & (~agent.food_mask) 
+        in_range = (distances <= agent.perception_radius) & (~agent.food_mask)
         if distances[in_range].size > 0:
             closest_distance = np.min(distances[in_range])
             closest_index = np.where(distances == closest_distance)[0][0]
@@ -155,6 +157,7 @@ class Environment:
             pygame.draw.circle(screen, (255, 0, 0), (int(self.size / 2 * scale_factor), int(self.size / 2 * scale_factor)), 5)
             pygame.display.flip()   
         pygame.quit()
+        self.num_food = len(self.food_positions)
 
 
 if __name__ == '__main__':
