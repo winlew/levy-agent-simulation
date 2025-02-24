@@ -65,7 +65,7 @@ def initialize_epoch_data(params):
     
 def update_epoch_data(data, iteration, trajectory_log, meals_per_iteration):
     """
-    Log data for a single epoch with the simulation results of a single iteration.
+    Meant to be called to update the data for a single epoch in each iteration.
     """
     data["x_position"].loc[iteration, :, :] = trajectory_log[:, :, 0]
     data["y_position"].loc[iteration, :, :] = trajectory_log[:, :, 1]
@@ -101,7 +101,8 @@ def save_epoch_data(folder, data, population, epoch):
     folder_path = config.DATA_PATH / folder
     folder_path.mkdir(parents=True, exist_ok=True)
     data.to_netcdf(folder_path / f'agent_data{epoch}.nc')
-    save_population(population, folder + f'/population{epoch}')
+    if population:
+        save_population(population, folder + f'/population{epoch}')
 
 def load_epoch_data(folder, epoch=None):
     """
