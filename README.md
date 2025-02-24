@@ -20,6 +20,7 @@ Run a simulation by executing main.py.
 
 ## Environment
 The environment is the area in which the simulation takes place.
+- quadratic
 - has periodic boundaries
 - contains randomly distributed food particles
 
