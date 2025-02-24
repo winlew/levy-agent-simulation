@@ -27,16 +27,16 @@ def update(frame, ax, env, params, data, color_dict):
     render_state(ax, data, env, color_dict, params, frame)
     plot_traces(ax, env, params, data, frame, color_dict)
 
-def animate(environment, params, data, folder_name=None):
+def animate(environment, params, data, folder_name=None, file_name=None):
     with mp.Manager() as manager:
         tqdm_positions = manager.list(range(params.iterations_per_epoch))
         with mp.Pool(config.MAX_PROCESSES) as pool:
             pool.starmap(
                 animate_single_iteration,
-                [(i, environment, params, data, folder_name, tqdm_positions[i]) for i in range(params.iterations_per_epoch)]
+                [(i, environment, params, data, folder_name, file_name, tqdm_positions[i]) for i in range(params.iterations_per_epoch)]
             )
 
-def animate_single_iteration(i, environment, params, data, folder_name, tqdm_position):
+def animate_single_iteration(i, environment, params, data, folder_name, file_name, tqdm_position, save=True):
     iteration_data = data.sel(iteration=i)
 
     iteration_data = iteration_data.sortby('meals', ascending = False).isel(agent = slice(0, 10))
@@ -56,26 +56,29 @@ def animate_single_iteration(i, environment, params, data, folder_name, tqdm_pos
 
     frames = tqdm(range(len(iteration_data.coords['timestep'])), desc=f"Animating {i+1}/{params.iterations_per_epoch}", unit="frame", position=tqdm_position, leave=True)
     ani = animation.FuncAnimation(fig, update, frames=frames, fargs=(ax, environment, params, iteration_data, color_dict), interval=100)
-
-    project_root = Path(__file__).parent.parent
-    data_path = project_root / 'data' / folder_name 
-    data_path.mkdir(parents=True, exist_ok=True)
-    ani.save(filename=data_path / f'animation{i+1}.gif', writer="pillow") 
-    print(f"Safed animation under:\n{data_path}")
-    # plt.show()
+    
+    if save:
+        project_root = Path(__file__).parent.parent
+        data_path = project_root / 'data' / folder_name 
+        data_path.mkdir(parents=True, exist_ok=True)
+        if file_name is None:
+            ani.save(filename=data_path / f'animation{i+1}.gif', writer="pillow")
+        else: 
+            ani.save(filename=data_path / f'{file_name}.gif', writer="pillow")
+        print(f"Safed animation under:\n{data_path}")
 
 def render_state(ax, data, env, color_dict, params, frame):
     plotWall(env, ax, color_dict)
     plotFood(env, ax, color_dict)
     # Plot agent perception patches
-    percept_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values,data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['perception_radius'].values))
-    plotFilledPatches(env,percept_matrix.transpose(), alpha=0.2, color=color_dict["agent_color"], ax=ax)
+    percept_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['perception_radius'].values))
+    plotFilledPatches(env, percept_matrix.transpose(), alpha=0.2, color=color_dict["agent_color"], ax=ax)
     # Plot agent eat patches
-    eat_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values,data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius,len(data.coords['agent']))))
-    plotFilledPatches(env,eat_matrix.transpose(), alpha=0.5, color=color_dict["agent_color"], ax=ax)
+    eat_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, len(data.coords['agent']))))
+    plotFilledPatches(env, eat_matrix.transpose(), alpha=0.5, color=color_dict["agent_color"], ax=ax)
     # Plot agent directions
-    direction_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values,data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['direction'].values, np.repeat(params.eat_radius*2,len(data.coords['agent']))))
-    plotLines(env,direction_matrix.transpose(), alpha=1, color=color_dict["agent_color"], linewidth=1, ax=ax)
+    direction_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['direction'].values, np.repeat(params.eat_radius*2,len(data.coords['agent']))))
+    plotLines(env, direction_matrix.transpose(), alpha=1, color=color_dict["agent_color"], linewidth=1, ax=ax)
 
 def plotWall(env, ax, color_dict):
     for wall in env.walls:
@@ -85,9 +88,10 @@ def plotFood(env, ax, color_dict, particle_scale=1):
     if len(env.food_positions) > 0:
         ax.scatter(env.food_positions[:,0], env.food_positions[:,1], color=color_dict["food_color"], label='Food', s=2**particle_scale)
 
-def plotFilledPatches(env,data_matrix, alpha, color, ax):
+def plotFilledPatches(env, data_matrix, alpha, color, ax):
     # data_matrix = (N,3) with data_matrix[i] = [x_i,y_i,radius_i]
     
+    # create 50 points along circles circumference
     theta = np.linspace(0, 2*np.pi, 50)
 
     for row in data_matrix:
@@ -138,9 +142,10 @@ def plotFilledPatches(env,data_matrix, alpha, color, ax):
             ys = y-env.size + r * np.sin(theta)
             ax.fill(xn, ys, color=color, alpha=alpha)
 
+# TODO debug, something is fishy here
 def plot_traces(ax, env, params, data, frame, color_dict):
     # Plot agent traces
-    N_traces = 40
+    N_traces = params.simulation_steps
     i = 1
     v_s = params.slow_velocity
     v_f = params.fast_velocity
@@ -153,7 +158,7 @@ def plot_traces(ax, env, params, data, frame, color_dict):
         plotLines(env, trace_matrix, alpha=1-(i-1)/N_traces, color=color_dict["agent_color"], linewidth=0.5, ax=ax)
         i += 1
 
-def plotLines(env,data_matrix, alpha, color,linewidth, ax):
+def plotLines(env, data_matrix, alpha, color, linewidth, ax):
     # data_matrix = (N,4) with data_matrix[i] = [x_i,y_i,dir_i,len_i]
     
     # Check if for each line a color is defined
