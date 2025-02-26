@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import random
+import math
 
 class Rnn(nn.Module):
     """
@@ -255,6 +257,211 @@ class Agent:
         self.meals = 0
 
 
+class LévyAgent:
+    """
+    A blind agent that navigates in an environment follows a Lévy Walk like movement pattern and eats food particles.
+    The positioning of the agent in the environment is described by:
+    - its 2D position
+    - the direction it faces in world perspective (0 to 2pi)
+
+    Movement:
+    - agent chooses a random direction
+    - agent chooses a step length according to a power law distribution
+    - agent travels in the chosen direction with the chosen step length for step length / velocity time steps
+    """
+    
+    def __init__(self, params, velocity):
+        self.eat_radius = params.eat_radius
+        # agent is blind, so it only senses food particles that are within its body 
+        self.perception_radius = params.eat_radius
+        self.velocity = velocity
+        self.direction = np.random.uniform(0, 2*np.pi)
+        self.position = np.array([0,0])
+        self.last_position = None
+        self.food_mask = np.zeros(params.num_food, dtype=bool)
+        # optimal Lévy exponent
+        self.mu = 2
+        self.meals = 0
+        self.pending_steps = 0
+        self.num_food = params.num_food
+        # internal count of the simulation steps
+        self.step = 0
+        self.meal_timeline = np.zeros(params.simulation_steps)
+    
+    def perceive(self, environment):
+        """
+        Agent senses the environment for the closest food particle.
+        If it is within the agents eat radius, it is consumed immediatly.
+
+        Args:
+            environment (Environment): the environment the agent navigates in            
+        """
+        _, food_distance, food_index = environment.get_closest_food(self)
+        if food_distance and food_distance <= self.eat_radius:
+            self.eat(food_index)
+        self.check_path(environment)
+
+    def choose_action(self):
+        """
+        Agent chooses a random direction and a step length according to a power law distribution.
+        """
+        self.direction = np.random.uniform(0, 2*np.pi)
+        x = np.random.uniform(0, 1)
+        step_length = int(1 / x**(1/self.mu))
+        self.pending_steps = step_length
+
+    def check_path(self, environment):
+        """
+        Used to check whether agent stepped over food particle after updating its position.
+        
+        Constructs a rectangle between the past and current position of the agent. Where
+        - side A is two times the eat radius long and perpendicular to the direction of movement and
+        - side B is the distance between the past and current position of the agent.
+        If there is a yet undetected food particle inside the boundaries of the rectangle, the agent consumes it.
+
+        Args:
+            environment (Environment): the environment the agent navigates in
+        """
+        # do not check path on first step
+        if self.last_position is None:
+            return
+        # TODO check path is not periodic boundary safe!
+        # TODO this method is domain size dependent
+        # if a periodic boundary got crossed, disable check path for now
+        if abs(self.last_position[0] - self.position[0]) >  environment.size / 2 or abs(self.last_position[1] - self.position[1]) > environment.size / 2:
+            return
+        point1 = Point(self.last_position[0], self.last_position[1])
+        point2 = Point(self.position[0], self.position[1])
+        hitbox = rectangle_from_points(point1, point2, self.eat_radius)
+        for i, food_particle in enumerate(environment.food_positions):
+            food_point = Point(food_particle[0], food_particle[1])
+            if not self.food_mask[i] and inside_rectangle(hitbox, food_point):
+                self.eat(i)
+
+    def move(self, new_position, environment_size):
+        """
+        Move to new position and update last position.
+
+        Args:
+            new_position (np.array): new position of the agent
+            environment_size (int): size of the environment
+        """
+        self.last_position = self.position
+        self.position = np.mod(new_position, environment_size)
+        self.step += 1
+
+    def eat(self, food_index):
+        """
+        Consume a food particle.
+
+        Args:
+            food_index (int): index of the food particle
+        """
+        self.food_mask[food_index] = True
+        self.meals += 1
+        self.meal_timeline[self.step] += 1
+
+    def reset(self):
+        """
+        Reset the agent to its initial state.
+        The agents position is taken care of by the environment.
+        """
+        self.food_mask = np.zeros(self.num_food, dtype=bool)
+        self.meals = 0
+
+class BallisticAgent:
+    """
+    Blind agent that moves straight and never turns.
+    """
+
+    def __init__(self, params, velocity):
+        self.eat_radius = params.eat_radius
+        self.perception_radius = params.eat_radius
+        self.velocity = velocity
+        self.direction = np.random.uniform(0, 2*np.pi)
+        self.position = np.array([0,0])
+        self.last_position = None
+        self.food_mask = np.zeros(params.num_food, dtype=bool)
+        self.meals = 0
+        self.num_food = params.num_food
+        # internal count of the simulation steps
+        self.step = 0
+        self.meal_timeline = np.zeros(params.simulation_steps)
+    
+    def perceive(self, environment):
+        """
+        Sense environment for food particles around current position.
+        Consume food that is within the eat radius.
+
+        Args:
+            environment (Environment): the environment the agent navigates in            
+        """
+        _, food_distance, food_index = environment.get_closest_food(self)
+        if food_distance and food_distance <= self.eat_radius:
+            self.eat(food_index)
+        self.check_path(environment)
+
+    def check_path(self, environment):
+        """
+        Used to check whether agent stepped over food particle after updating its position.
+        
+        Constructs a rectangle between the past and current position of the agent. Where
+        - side A is two times the eat radius long and perpendicular to the direction of movement and
+        - side B is the distance between the past and current position of the agent.
+        If there is a yet undetected food particle inside the boundaries of the rectangle, the agent consumes it.
+
+        Args:
+            environment (Environment): the environment the agent navigates in
+        """
+        # do not check path on first step
+        if self.last_position is None:
+            return
+        # TODO check path is not periodic boundary safe!
+        # TODO this method is domain size dependent
+        # if a periodic boundary got crossed, disable check path for now
+        if abs(self.last_position[0] - self.position[0]) >  environment.size / 2 or abs(self.last_position[1] - self.position[1]) > environment.size / 2:
+            return
+        
+        point1 = Point(self.last_position[0], self.last_position[1])
+        point2 = Point(self.position[0], self.position[1])
+        hitbox = rectangle_from_points(point1, point2, self.eat_radius)
+        for i, food_particle in enumerate(environment.food_positions):
+            food_point = Point(food_particle[0], food_particle[1])
+            if not self.food_mask[i] and inside_rectangle(hitbox, food_point):
+                self.eat(i)
+    
+    def move(self, new_position, environment_size):
+        """
+        Move agent to new position and update last position.
+
+        Args:
+            new_position (np.array): new position of the agent
+            environment_size (int): size of the environment
+        """
+        self.last_position = self.position
+        self.position = np.mod(new_position, environment_size)
+        self.step += 1
+
+    def eat(self, food_index):
+        """
+        Agent consumes a food particle.
+
+        Args:
+            food_index (int): index of the food particle
+        """
+        self.food_mask[food_index] = True
+        self.meals += 1
+        self.meal_timeline[self.step] += 1
+
+    def reset(self):
+        """
+        Reset the agent to its initial state.
+        The agents position is taken care of by the environment.
+        """
+        self.food_mask = np.zeros(self.num_food, dtype=bool)
+        self.meals = 0
+
+
 def vector_to_angle(normalized_vector):
     """
     Transforms a normalized 2D vector to an angle in radians.
@@ -296,6 +503,68 @@ def ccw(A,B,C):
 # Return true if line segments AB and CD intersect
 def intersect(A,B,C,D):
     return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
+
+
+class Point:
+    """
+    A point in 2D space.
+    """
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __add__(self, other):
+        return Point(self.x + other.x, self.y + other.y)
+    
+    def __sub__(self, other):
+        return Point(self.x - other.x, self.y - other.y)
+    
+    def __mul__(self, other):
+        return Point(self.x * other, self.y * other)
+    
+    def dot(self, other):
+        return self.x * other.x + self.y * other.y
+
+class Rectangle:
+    """
+    Rectangle in 2D space. Defined by its four corner points.
+    """
+    def __init__(self, a, b, c, d):
+        self.a = a
+        self.b = b
+        self.c = c
+        self.d = d
+
+def rectangle_from_points(point1, point2, radius):
+    """
+    Constructs a rectangle object that spans between the two given points.
+    The vector between the two points is the midline of the rectangle.
+    The sides perpendicular to the midline have length two times the radius. 
+    """
+    midline = point2 - point1
+    perpendicular_vector = Point(-midline.y / math.sqrt(midline.dot(midline)), midline.x / math.sqrt(midline.dot(midline)))
+    a = point1 + perpendicular_vector * radius
+    b = point1 - perpendicular_vector * radius
+    c = point2 - perpendicular_vector * radius
+    d = point2 + perpendicular_vector * radius
+    return Rectangle(a, b, c, d)
+
+def inside_rectangle(rectangle, point):
+    """
+    Tests if a point is inside the borders of a rectangle.
+    Chooses any corner point as the reference point.
+    Then checks whether the projections of the vector from this reference point to the point and the sides of the rectangle are within the borders.
+    """
+    point_of_reference = rectangle.a
+    rectangle_width_vector = rectangle.b - point_of_reference
+    rectangle_height_vector = rectangle.d - point_of_reference
+    point_difference_vector = point - point_of_reference
+    relative_width_projection = rectangle_width_vector.dot(point_difference_vector) / rectangle_width_vector.dot(rectangle_width_vector)
+    relative_height_projection = rectangle_height_vector.dot(point_difference_vector) / rectangle_height_vector.dot(rectangle_height_vector)
+    if 0 <= relative_width_projection <= 1 and 0 <= relative_height_projection <= 1:
+        return True 
+    else:
+        return False
 
 if __name__ == '__main__':
     pass
