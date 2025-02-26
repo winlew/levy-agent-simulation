@@ -74,7 +74,7 @@ def render_state(ax, data, env, color_dict, params, frame):
     percept_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['perception_radius'].values))
     plotFilledPatches(env, percept_matrix.transpose(), alpha=0.2, color=color_dict["agent_color"], ax=ax)
     # Plot agent eat patches
-    eat_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, len(data.coords['agent']))))
+    eat_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, len(data.coords['agent'])), data['meal_timeline'].values[frame]))
     plotFilledPatches(env, eat_matrix.transpose(), alpha=0.5, color=color_dict["agent_color"], ax=ax)
     # Plot agent directions
     direction_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['direction'].values, np.repeat(params.eat_radius*2,len(data.coords['agent']))))
@@ -90,7 +90,7 @@ def plotFood(env, ax, color_dict, particle_scale=1):
 
 def plotFilledPatches(env, data_matrix, alpha, color, ax):
     # data_matrix = (N,3) with data_matrix[i] = [x_i,y_i,radius_i]
-    
+    original_color = color
     # create 50 points along circles circumference
     theta = np.linspace(0, 2*np.pi, 50)
 
@@ -98,6 +98,12 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
         x = row[0]
         y = row[1]
         r = row[2]
+
+        # if there are even 4 rows
+        if len(row) == 4 and row[3] != 0:
+            color = 'red'
+        else:
+            color = original_color
 
         # Normal part
         xn = x + r * np.cos(theta)
