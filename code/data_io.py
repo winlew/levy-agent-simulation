@@ -7,6 +7,8 @@ import xarray as xr
 from pathlib import Path
 import config
 import json
+from PIL import Image
+import os
 
 def save_population(population, folder):
     """
@@ -40,6 +42,7 @@ def initialize_epoch_data(params):
     direction: of each agent at each time step in each iteration
     perception_radius: of each agent at each time step in each iteration
     meals: number of food items eaten by each agent in each iteration
+    meal_timeline: 1 for each time step in which the agent ate, 0 otherwise (for every agent)
     average_population_fitness: average fitness of the population in each epoch
 
     Returns:
@@ -52,6 +55,7 @@ def initialize_epoch_data(params):
         "direction": (["iteration", "timestep", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
         "perception_radius": (["iteration", "timestep", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
         "meals": (["iteration", "agent"], np.zeros((params.iterations_per_epoch, params.population_size))),
+        "meal_timeline": (["iteration", "ate", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
         "average_population_fitness": (["epoch"], np.zeros(params.num_epochs)),
         },
         coords={
@@ -72,6 +76,12 @@ def update_epoch_data(data, iteration, trajectory_log, meals_per_iteration):
     data["direction"].loc[iteration, :, :] = trajectory_log[:, :, 2]
     data["perception_radius"].loc[iteration, :, :] = trajectory_log[:, :, 3]
     data["meals"].loc[:, :] = meals_per_iteration
+
+def update_meal_timelines(data, iteration, population):
+    meal_timeline = np.zeros((len(population[0].meal_timeline), len(population)))
+    for i, agent in enumerate(population):
+        meal_timeline[:, i] = agent.meal_timeline
+    data['meal_timeline'].loc[iteration, :, :] = meal_timeline
 
 def update_fitness_log(data, population_fitness_log):
     """
@@ -141,5 +151,20 @@ def write_parameters_to_text(params, folder):
     with open(folder_path, 'w') as text_file:
         json.dump(params_dict, text_file, indent=4)
 
+def extract_gif_frames(folder, file_name):
+    """
+    Extracts the frames from a gif file.
+    """
+    path = config.DATA_PATH / folder / file_name
+    gif = Image.open(path)
+
+    output_folder = config.DATA_PATH / folder / f"frames_{file_name}"
+    output_folder.mkdir(parents=True, exist_ok=True)
+
+    for i in range(gif.n_frames):
+        gif.seek(i)
+        gif.save(os.path.join(output_folder, f"frame_{i}.png"))
+
 if __name__ == '__main__':
+    extract_gif_frames('exploration_study', 'ballistic.gif')
     pass
