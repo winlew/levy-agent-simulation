@@ -69,7 +69,9 @@ class Rnn(nn.Module):
         # is of interest as it contains processed information from all previous time steps
         output = self.fc(hidden_output[-1, :])
         return output, hidden_state
-    
+
+
+# DISFUNCTIONAL ATM
 class Agent:
     """
     An agent that navigates in an environment and eats food particles.
@@ -338,17 +340,22 @@ class LévyAgent:
             if not self.food_mask[i] and inside_rectangle(hitbox, food_point):
                 self.eat(i)
 
-    def move(self, new_position, environment_size):
+    def move(self, new_position, environment):
         """
         Move to new position and update last position.
 
         Args:
             new_position (np.array): new position of the agent
-            environment_size (int): size of the environment
+            environment (Environment): 2D environment the agent navigates in
         """
-        self.last_position = self.position
-        self.position = np.mod(new_position, environment_size)
         self.step += 1
+        for wall in environment.walls:
+            if intersect(self.position, new_position, wall[0], wall[1]):
+                return
+        new_position = np.mod(new_position, environment.size)
+        self.last_position = self.position
+        self.position = new_position
+
 
     def eat(self, food_index):
         """
@@ -430,17 +437,21 @@ class BallisticAgent:
             if not self.food_mask[i] and inside_rectangle(hitbox, food_point):
                 self.eat(i)
     
-    def move(self, new_position, environment_size):
+    def move(self, new_position, environment):
         """
         Move agent to new position and update last position.
 
         Args:
             new_position (np.array): new position of the agent
-            environment_size (int): size of the environment
+            environment (Environment): 2D environment the agent navigates in
         """
-        self.last_position = self.position
-        self.position = np.mod(new_position, environment_size)
         self.step += 1
+        for wall in environment.walls:
+            if intersect(self.position, new_position, wall[0], wall[1]):
+                return
+        new_position = np.mod(new_position, environment.size)
+        self.last_position = self.position
+        self.position = new_position
 
     def eat(self, food_index):
         """
@@ -497,12 +508,12 @@ def calculate_angle_difference(food_direction, agent_direction):
 
 # TODO refactor and understand
 # this logic does not work for periodic boundaries
-def ccw(A,B,C):
-    return (C[1]-A[1]) * (B[0]-A[0]) > (B[1]-A[1]) * (C[0]-A[0])
+def counter_clockwise(p1, p2, p3):
+    return (p3[1]-p1[1]) * (p2[0]-p1[0]) > (p2[1]-p1[1]) * (p3[0]-p1[0])
 
 # Return true if line segments AB and CD intersect
 def intersect(A,B,C,D):
-    return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
+    return counter_clockwise(A,C,D) != counter_clockwise(B,C,D) and counter_clockwise(A,B,C) != counter_clockwise(A,B,D)
 
 
 class Point:
