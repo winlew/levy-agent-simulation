@@ -36,10 +36,11 @@ def animate(environment, params, data, folder_name=None, file_name=None):
                 [(i, environment, params, data, folder_name, file_name, tqdm_positions[i]) for i in range(params.iterations_per_epoch)]
             )
 
-def animate_single_iteration(i, environment, params, data, folder_name, file_name, tqdm_position, save=True):
+def animate_single_iteration(i, environment, params, data, folder_name, file_name, tqdm_position, save=True, elite_only=False):
     iteration_data = data.sel(iteration=i)
 
-    iteration_data = iteration_data.sortby('meals', ascending = False).isel(agent = slice(0, 10))
+    if elite_only:
+        iteration_data = iteration_data.sortby('meals', ascending = False).isel(agent = slice(0, 10))
 
     color_dict = getColorDict()
     plt.rcParams.update({'font.size': 14})
