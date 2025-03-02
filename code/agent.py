@@ -269,7 +269,7 @@ class LévyAgent:
     Movement:
     - agent chooses a random direction
     - agent chooses a step length according to a power law distribution
-    - agent travels in the chosen direction with the chosen step length for step length / velocity time steps
+    - agent travels in the chosen direction for step length / velocity time steps
     """
     
     def __init__(self, params, velocity):
