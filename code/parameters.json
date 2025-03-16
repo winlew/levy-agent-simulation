@@ -5,10 +5,8 @@
         "input_size": 3,
         "output_size": 3,
         "eat_radius": 0.5,
-        "slow_velocity": 1,
-        "fast_velocity": 1,
-        "slow_perception_radius": 3,
-        "fast_perception_radius": 0
+        "velocity": 1,
+        "perception_radius": 3
     },
     "environment": {
         "num_food": 100,
