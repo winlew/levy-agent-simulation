@@ -11,6 +11,10 @@ from tqdm import tqdm
 
 class Simulation:
 
+    """
+    Collection of methods that are used to run a simulation.
+    """
+
     def __init__(self, params):
         """
         Args:
@@ -147,7 +151,7 @@ class Simulation:
         for agent in population:
             if self.iteration != 0:
                 agent.reset()
-            agent.position = environment.get_random_position()
+            # agent.position = environment.get_random_position()
 
     @record_move
     def simulate_step(self, population, environment, *args, **kwargs):

@@ -269,15 +269,15 @@ class Agent:
     """
 
     def __init__(self, params):
+        self.params = params
         self.eat_radius = params.eat_radius
         self.perception_radius = params.perception_radius
         self.velocity = params.velocity
         self.direction = np.random.uniform(0, 2*np.pi)
-        self.position = np.array([0,0])
+        self.position = np.array(np.random.uniform(0, params.size, 2))
         self.last_position = None
         self.food_mask = np.zeros(params.num_food, dtype=bool)
         self.meals = 0
-        self.num_food = params.num_food
         self.step = 0
         self.meal_timeline = np.zeros(params.simulation_steps)
 
@@ -355,8 +355,11 @@ class Agent:
         Reset the agent to its initial state.
         The agents position is taken care of by the environment.
         """
-        self.food_mask = np.zeros(self.num_food, dtype=bool)
+        self.food_mask = np.zeros(self.params.num_food, dtype=bool)
         self.meals = 0
+        self.position = np.array(np.random.uniform(0, self.params.size, 2))
+        self.direction = np.random.uniform(0, 2*np.pi)
+
 
 class LévyAgent(Agent):
     """
