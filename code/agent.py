@@ -282,7 +282,7 @@ class LévyAgent:
         self.last_position = None
         self.food_mask = np.zeros(params.num_food, dtype=bool)
         # optimal Lévy exponent
-        self.mu = 2
+        self.mu = 2 # but for destructable targets mu=1
         self.meals = 0
         self.pending_steps = 0
         self.num_food = params.num_food
