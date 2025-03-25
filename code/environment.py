@@ -123,9 +123,6 @@ class Environment:
             closest_position = None
 
         return closest_position, closest_distance, closest_index
-    
-    def get_random_position(self):
-        return np.random.rand(2) * self.size
 
     def custom_food_positioning(self):
         """
