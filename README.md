@@ -11,10 +11,14 @@ Clone the github repository
 
 ```git clone git@github.com:winlew/levy-agent-simulation.git```
 
-Create a virtual environment and install the required packages
+Create a virtual environment 
 
 ```python3 -m venv levy-agent-simulation```\
 ```source levy-agent-simulation/bin/activate```
+
+Install the required packages
+
+```pip install -r requirements.txt```
 
 Run a simulation by executing main.py.
 
