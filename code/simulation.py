@@ -67,7 +67,7 @@ class Simulation:
 
         print('Starting simulation...')
         for epoch in tqdm(range(1, self.num_epochs + 1)):
-            population = self.run_epoch(population, environment, folder)
+            population = self.run_epoch(population, environment)
             if epoch % config.INTERVALL_SAVE == 0:
                 save_epoch_data(folder, self.data, population, epoch)
         save_simulation_context(folder, environment, self.params)
@@ -88,7 +88,7 @@ class Simulation:
                 population.append(agent)
         return population
 
-    def run_epoch(self, population, environment, folder):
+    def run_epoch(self, population, environment):
         """
         Trains the population for a single epoch.
         - simulate agent foraging for all iterations
