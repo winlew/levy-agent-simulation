@@ -21,7 +21,7 @@
         "train_mode": true
     },
     "simulation": {
-        "total_time": 100,
+        "total_time": 99,
         "delta_t": 1,
         "num_epochs": 1,
         "iterations_per_epoch": 1

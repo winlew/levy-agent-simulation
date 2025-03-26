@@ -39,9 +39,7 @@ class Simulation:
 
         self.data = initialize_epoch_data(self.params)
 
-    #TODO: check the data collection logic
-
-    def run(self, folder, population_load_folder=None):
+    def run(self, folder, population=None):
         """
         Run a simulation.
 
@@ -53,10 +51,10 @@ class Simulation:
 
         Args:
             folder (str): store the simulation results in
-            population_load_folder (str): if provided, load a population from this folder
+            population (list): list of agents
         """
         environment = Environment(self.params)
-        population = self.set_up_population(population_load_folder)
+        population = self.set_up_population(population)
 
         print('Starting simulation...')
         for epoch in tqdm(range(1, self.num_epochs + 1)):
@@ -68,19 +66,14 @@ class Simulation:
         save_simulation_context(folder, environment, self.params)
         save_epoch_data(folder, self.data, population, self.params.num_epochs)
 
-    def set_up_population(self, load_folder):
+    def set_up_population(self, population):
         """
-        Either load an existing population or create a population from scratch by instantiating
+        Either use an existing population or create a population from scratch by instantiating
         agents with the agent class.
         """
-        population = []
-        # TODO currently not functional
-        if load_folder:
-            population = load_population(load_folder)
-        else:
-            for _ in range(self.population_size):
-                population.append(self.agent(self.params))
-        return population
+        if population:
+            return population  
+        return [self.agent(self.params) for _ in range(self.population_size)]
     
     def record_iteration_data(func):
         """
