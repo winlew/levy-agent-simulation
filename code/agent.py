@@ -279,7 +279,7 @@ class Agent:
         self.food_mask = np.zeros(params.num_food, dtype=bool)
         self.meals = 0
         self.step = 0
-        self.meal_timeline = np.zeros(params.simulation_steps)
+        self.ate = False # whether the agent ate at the previous time step
 
     def perceive(self, environment):
         """
@@ -289,6 +289,7 @@ class Agent:
         Args:
             environment (Environment): the environment the agent navigates in            
         """
+        self.ate = False
         _, food_distance, food_index = environment.get_closest_food(self)
         if food_distance and food_distance <= self.eat_radius:
             self.eat(food_index)
@@ -348,7 +349,7 @@ class Agent:
         """
         self.food_mask[food_index] = True
         self.meals += 1
-        self.meal_timeline[self.step] += 1
+        self.ate = True
 
     def reset(self):
         """
@@ -363,7 +364,7 @@ class Agent:
 
 class LévyAgent(Agent):
     """
-    A blind agent that navigates in an environment follows a Lévy Walk like movement pattern.
+    A blind agent that navigates in an environment and follows Lévy Walk like movement patterns.
 
     Movement:
     - agent chooses a random direction
@@ -379,25 +380,36 @@ class LévyAgent(Agent):
         self.mu = 2 # but for destructable targets mu=1
         self.pending_steps = 0
 
-    def choose_action(self):
+    def choose_action(self, _):
         """
         Agent chooses a random direction and a step length according to a power law distribution.
         """
-        self.direction = np.random.uniform(0, 2*np.pi)
-        x = np.random.uniform(0, 1)
-        step_length = int(1 / x**(1/self.mu))
-        self.pending_steps = step_length
+        if self.pending_steps == 0:
+            self.direction = np.random.uniform(0, 2*np.pi)
+            x = np.random.uniform(0, 1)
+            step_length = int(1 / x**(1/self.mu))
+            self.pending_steps = step_length
+    
+    def perform_action(self, environment, _):
+        self.pending_steps -= 1
+        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
+        self.move(new_position, environment)
 
 class BallisticAgent(Agent):
     """
     Blind agent that moves straight and never turns.
     """
 
-    def choose_action(self):
+    def choose_action(self, _):
         """
-        Agent does not change its direction at all.
+        Never decides on any action. Keeps original direction.
         """
         pass
+    
+    def perform_action(self, environment, _):
+        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
+        self.move(new_position, environment)
+
 
 def vector_to_angle(normalized_vector):
     """

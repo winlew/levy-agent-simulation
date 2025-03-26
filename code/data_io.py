@@ -40,10 +40,7 @@ def initialize_epoch_data(params):
     x_position: of each agent at each time step in each iteration
     y_position: of each agent at each time step in each iteration
     direction: of each agent at each time step in each iteration
-    perception_radius: of each agent at each time step in each iteration
-    meals: number of food items eaten by each agent in each iteration
-    meal_timeline: 1 for each time step in which the agent ate, 0 otherwise (for every agent)
-    average_population_fitness: average fitness of the population in each epoch
+    ate: 1 if the agent ate at the time step, 0 otherwise 
 
     Returns:
         xr.Dataset: dataset to store the simulation results
@@ -53,41 +50,24 @@ def initialize_epoch_data(params):
         "x_position": (["iteration", "timestep", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
         "y_position": (["iteration", "timestep", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
         "direction": (["iteration", "timestep", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
-        "perception_radius": (["iteration", "timestep", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
-        "meals": (["iteration", "agent"], np.zeros((params.iterations_per_epoch, params.population_size))),
-        "meal_timeline": (["iteration", "ate", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
-        "average_population_fitness": (["epoch"], np.zeros(params.num_epochs)),
+        "ate": (["iteration", "timestep", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
         },
         coords={
             "iteration": np.arange(params.iterations_per_epoch),
             "timestep": np.arange(params.simulation_steps),
             "agent": np.arange(params.population_size),
-            "epoch": np.arange(params.num_epochs),
         }
     )
     return data
     
-def update_epoch_data(data, iteration, trajectory_log, meals_per_iteration):
+def update_epoch_data(data, iteration, trajectory_log):
     """
     Meant to be called to update the data for a single epoch in each iteration.
     """
     data["x_position"].loc[iteration, :, :] = trajectory_log[:, :, 0]
     data["y_position"].loc[iteration, :, :] = trajectory_log[:, :, 1]
     data["direction"].loc[iteration, :, :] = trajectory_log[:, :, 2]
-    data["perception_radius"].loc[iteration, :, :] = trajectory_log[:, :, 3]
-    data["meals"].loc[:, :] = meals_per_iteration
-
-def update_meal_timelines(data, iteration, population):
-    meal_timeline = np.zeros((len(population[0].meal_timeline), len(population)))
-    for i, agent in enumerate(population):
-        meal_timeline[:, i] = agent.meal_timeline
-    data['meal_timeline'].loc[iteration, :, :] = meal_timeline
-
-def update_fitness_log(data, population_fitness_log):
-    """
-    Log average fitness of the population in each epoch.
-    """
-    data["average_population_fitness"].loc[:] = population_fitness_log
+    data["ate"].loc[iteration, :, :] = trajectory_log[:, :, 3]
 
 def save_simulation_context(folder, environment, params):
     """
@@ -101,6 +81,7 @@ def save_simulation_context(folder, environment, params):
         pickle.dump(environment, f)
     with open(folder_path / 'parameters.pkl', 'wb') as f:
         pickle.dump(params, f)
+    write_parameters_to_text(params, folder)
 
 def save_epoch_data(folder, data, population, epoch):
     """
@@ -110,9 +91,11 @@ def save_epoch_data(folder, data, population, epoch):
     """
     folder_path = config.DATA_PATH / folder
     folder_path.mkdir(parents=True, exist_ok=True)
-    data.to_netcdf(folder_path / f'agent_data{epoch}.nc')
-    if population:
-        save_population(population, folder + f'/population{epoch}')
+    data.to_netcdf(folder_path / f'epoch_{epoch}.nc')
+
+    # TODO implement saving populations
+    # if population:
+    #     save_population(population, folder + f'/population{epoch}')
 
 def load_epoch_data(folder, epoch=None):
     """
@@ -126,9 +109,9 @@ def load_epoch_data(folder, epoch=None):
     params = load_parameters(folder)
     folder_path = config.DATA_PATH / folder
     if epoch is None:
-        data = xr.open_dataset(folder_path / f'agent_data{params.num_epochs}.nc')
+        data = xr.open_dataset(folder_path / f'epoch_{params.num_epochs}.nc')
     else:
-        data = xr.open_dataset(folder_path / f'agent_data{epoch}.nc')
+        data = xr.open_dataset(folder_path / f'epoch_{epoch}.nc')
     with open(folder_path / 'environment.pkl', 'rb') as f:
         environment = pickle.load(f)
     return data, environment, params
@@ -166,5 +149,5 @@ def extract_gif_frames(folder, file_name):
         gif.save(os.path.join(output_folder, f"frame_{i}.png"))
 
 if __name__ == '__main__':
-    extract_gif_frames('exploration_study', 'ballistic.gif')
+    extract_gif_frames('exploration_study', 'levy.gif')
     pass

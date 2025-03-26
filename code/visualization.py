@@ -39,9 +39,6 @@ def animate(environment, params, data, folder_name=None, file_name=None):
 def animate_single_iteration(i, environment, params, data, folder_name, file_name, tqdm_position, save=True, elite_only=False):
     iteration_data = data.sel(iteration=i)
 
-    if elite_only:
-        iteration_data = iteration_data.sortby('meals', ascending = False).isel(agent = slice(0, 10))
-
     color_dict = getColorDict()
     plt.rcParams.update({'font.size': 14})
     fig, ax = plt.subplots(figsize = (10, 10))
@@ -71,15 +68,16 @@ def animate_single_iteration(i, environment, params, data, folder_name, file_nam
 def render_state(ax, data, env, color_dict, params, frame):
     plotWall(env, ax, color_dict)
     plotFood(env, ax, color_dict)
-    # Plot agent perception patches
-    percept_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['perception_radius'].values))
+    # plot agent perception patches
+    percept_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, len(data.coords['agent']))))
     plotFilledPatches(env, percept_matrix.transpose(), alpha=0.2, color=color_dict["agent_color"], ax=ax)
-    # Plot agent eat patches
-    eat_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, len(data.coords['agent'])), data['meal_timeline'].values[frame]))
+    # plot agent eat patches
+    eat_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, len(data.coords['agent'])), data['ate'].values[frame]))
     plotFilledPatches(env, eat_matrix.transpose(), alpha=0.5, color=color_dict["agent_color"], ax=ax)
-    # Plot agent directions
-    direction_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['direction'].values, np.repeat(params.eat_radius*2,len(data.coords['agent']))))
-    plotLines(env, direction_matrix.transpose(), alpha=1, color=color_dict["agent_color"], linewidth=1, ax=ax)
+    # plot agent directions (the noses that show the direction the agents are heading)
+    if frame != 0:
+        direction_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['direction'].values, np.repeat(params.eat_radius*2,len(data.coords['agent']))))
+        plot_lines(env, direction_matrix.transpose(), alpha=1, color=color_dict["agent_color"], linewidth=1, ax=ax)
 
 def plotWall(env, ax, color_dict):
     for wall in env.walls:
@@ -149,23 +147,20 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
             ys = y-env.size + r * np.sin(theta)
             ax.fill(xn, ys, color=color, alpha=alpha)
 
-# TODO debug, something is fishy here
 def plot_traces(ax, env, params, data, frame, color_dict):
-    # Plot agent traces
-    N_traces = params.simulation_steps
+    # plot agent traces
+    # TODO first trace is not shown
+    number_of_traces = params.simulation_steps
     i = 1
-    v_s = params.slow_velocity
-    v_f = params.fast_velocity
+    velocity = params.velocity
     dt = params.delta_t
-    r_s = params.slow_perception_radius
-    while(frame-i >= 1 and i<=N_traces):
-        perc_ranges = data.sel(timestep=frame-i)['perception_radius'].values
-        distances = np.where(perc_ranges == r_s, v_s*dt, v_f*dt)
-        trace_matrix = np.column_stack((data.sel(timestep=frame-i-1)['x_position'].values,data.sel(timestep=frame-i-1)['y_position'].values,data.sel(timestep=frame-i)['direction'].values,distances))
-        plotLines(env, trace_matrix, alpha=1-(i-1)/N_traces, color=color_dict["agent_color"], linewidth=0.5, ax=ax)
+    while(frame - i >= 0 and i <= number_of_traces):
+        distances = np.repeat(velocity * dt, len(data.coords['agent']))
+        trace_matrix = np.column_stack((data.sel(timestep=frame-i)['x_position'].values, data.sel(timestep=frame-i)['y_position'].values, data.sel(timestep=frame-i+1)['direction'].values, distances))
+        plot_lines(env, trace_matrix, alpha=1-(i-1)/number_of_traces, color=color_dict["agent_color"], linewidth=0.5, ax=ax)
         i += 1
-
-def plotLines(env, data_matrix, alpha, color, linewidth, ax):
+   
+def plot_lines(env, data_matrix, alpha, color, linewidth, ax):
     # data_matrix = (N,4) with data_matrix[i] = [x_i,y_i,dir_i,len_i]
     
     # Check if for each line a color is defined
@@ -178,52 +173,52 @@ def plotLines(env, data_matrix, alpha, color, linewidth, ax):
             multi_colors = True
             colors = color
 
-    for i,row in enumerate(data_matrix):
+    for i, row in enumerate(data_matrix):
         x = row[0]
         y = row[1]
-        d = row[2]
-        l = row[3]
+        direction = row[2]
+        length = row[3]
 
         if multi_colors:
             color = colors[i]
 
         # Normal part
-        xn = np.linspace(x,x+np.cos(d)*l,10)
-        yn = np.linspace(y,y+np.sin(d)*l,10)
+        xn = np.linspace(x,x+np.cos(direction)*length,10)
+        yn = np.linspace(y,y+np.sin(direction)*length,10)
         ax.plot(xn,yn,color=color, alpha=alpha, linewidth=linewidth)
 
         ### Parts crossing the boundary
         # Overlap with left border?
-        if x+np.cos(d)*l<0: # TODO: boundary conditions correct implemented?
-            xs = np.linspace(x+env.size, x+env.size+np.cos(d)*l,10)
+        if x+np.cos(direction)*length<0: # TODO: boundary conditions correct implemented?
+            xs = np.linspace(x+env.size, x+env.size+np.cos(direction)*length,10)
             ax.plot(xs,yn,color=color, alpha=alpha, linewidth=linewidth)
             # In lower corner?
-            if y+np.sin(d)*l<0:
-                ys = np.linspace(y+env.size, y+env.size+np.sin(d)*l,10)
+            if y+np.sin(direction)*length<0:
+                ys = np.linspace(y+env.size, y+env.size+np.sin(direction)*length,10)
                 ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth)
             # In upper corner?
-            if y+np.sin(d)*l>env.size:  
-                ys = np.linspace(y-env.size, y-env.size+np.sin(d)*l,10)
+            if y+np.sin(direction)*length>env.size:  
+                ys = np.linspace(y-env.size, y-env.size+np.sin(direction)*length,10)
                 ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth)
         # Overlap with right border?
-        if x+np.cos(d)*l>env.size:
-            xs = np.linspace(x-env.size, x-env.size+np.cos(d)*l,10)
+        if x+np.cos(direction)*length>env.size:
+            xs = np.linspace(x-env.size, x-env.size+np.cos(direction)*length,10)
             ax.plot(xs,yn,color=color, alpha=alpha, linewidth=linewidth)
             # In lower corner?
-            if y+np.sin(d)*l<0:
-                ys = np.linspace(y+env.size, y+env.size+np.sin(d)*l,10)
+            if y+np.sin(direction)*length<0:
+                ys = np.linspace(y+env.size, y+env.size+np.sin(direction)*length,10)
                 ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth)
             # In upper corner?
-            if y+np.sin(d)*l>env.size:  
-                ys = np.linspace(y-env.size, y-env.size+np.sin(d)*l,10)
+            if y+np.sin(direction)*length>env.size:  
+                ys = np.linspace(y-env.size, y-env.size+np.sin(direction)*length,10)
                 ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth)
         # Overlap with lower border?
-        if y+np.sin(d)*l<0: 
-            ys = np.linspace(y+env.size, y+env.size+np.sin(d)*l,10)
+        if y+np.sin(direction)*length<0: 
+            ys = np.linspace(y+env.size, y+env.size+np.sin(direction)*length,10)
             ax.plot(xn,ys,color=color, alpha=alpha, linewidth=linewidth)
         # Overlap with upper border?
-        if y+np.sin(d)*l>env.size: 
-            ys = np.linspace(y-env.size, y-env.size+np.sin(d)*l,10)
+        if y+np.sin(direction)*length>env.size: 
+            ys = np.linspace(y-env.size, y-env.size+np.sin(direction)*length,10)
             ax.plot(xn,ys,color=color, alpha=alpha, linewidth=linewidth)
 
 def getColorDict():
@@ -287,6 +282,6 @@ def visualize_state(environment, agents):
         # Plot agent eat patches
         plotFilledPatches(environment,eat_matrix, alpha=0.5, color=color_dict["agent_color"], ax=ax)
         # Plot agent directions
-        plotLines(environment,direction_matrix, alpha=1, color=color_dict["agent_color"], linewidth=1, ax=ax)
+        plot_lines(environment,direction_matrix, alpha=1, color=color_dict["agent_color"], linewidth=1, ax=ax)
     # plt.show()
     return ax

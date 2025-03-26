@@ -1,7 +1,7 @@
 from pathlib import Path
 import multiprocessing as mp
 
-# x, y, direction, perception_radius
+# x, y, direction, boolean whether agent ate 
 NUM_MOTION_ATTRIBUTES = 4
 
 PROJECT_ROOT_PATH = Path(__file__).parent.parent
