@@ -23,7 +23,7 @@
     "simulation": {
         "total_time": 99,
         "delta_t": 1,
-        "num_epochs": 1,
-        "iterations_per_epoch": 1
+        "num_epochs": 100,
+        "iterations_per_epoch": 3
     }
 }

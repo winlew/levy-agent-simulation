@@ -16,11 +16,8 @@ def main():
     folder = input('Enter folder name to save simulation results under: ')
     params = Params.from_json('parameters.json')
 
-    # choose agent type here
-    agent = LévyAgent
-    # for more complex agents they need model too, but can be part of their class
-    # for the agents that don't learn we can do a single epoch with many iterations
-    # for the agents that do learn we can to multiple epochs
+    # select agent class here
+    agent = RnnAgent
     
     # execute simulation
     sim = Simulation(params, agent)
