@@ -1,5 +1,6 @@
 {
     "agent": {
+        "type": "RnnAgent",
         "eat_radius": 0.5,
         "velocity": 1,
         "perception_radius": 3
@@ -17,8 +18,7 @@
         "mutation_fraction": 0.4,
         "mutation_rate": 0.1,
         "mutation_strength": 0.1,
-        "tolerance": 0.1,
-        "train_mode": true
+        "tolerance": 0.1
     },
     "simulation": {
         "total_time": 99,

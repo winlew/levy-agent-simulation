@@ -1,10 +1,10 @@
 import numpy as np
 from environment import Environment
-from agent import Agent, Rnn
+from agent import *
 from evolution import EvolutionaryAlgorithm
 import os
 import json
-from data_io import update_epoch_data, initialize_epoch_data, save_simulation_context, load_population, save_epoch_data, write_parameters_to_text
+from data_io import update_epoch_data, initialize_epoch_data, save_simulation_context, save_epoch_data
 import config
 import time
 from tqdm import tqdm
@@ -18,12 +18,7 @@ class Simulation:
         """
         Args:
             params (Params): class that stores parameters of the simulation
-            agent (Class): class of the agent that is used in the simulation
-            total_time (int): total time of the simulation
-            delta_t (int): time step increment
-            num_epochs (int): number of epochs
-            iterations_per_epoch (int): number of iterations per epoch
-            population_size (int): number of agents in the population
+            agent (Class): agent type that is used in the simulation
         """
         self.params = params
         self.agent = agent
@@ -109,10 +104,9 @@ class Simulation:
         for _ in range(self.iterations_per_epoch):
             self.run_iteration(population, environment)
             self.iteration += 1
-        # TODO no evolution for now
-        # fitness logic here
-        #descendants = self.evolve(population)
-        descendants = population
+        # sum up consumed food particles over all iterations and time steps
+        self.fitnesses = np.asarray(np.sum(self.data['ate'], axis=(0,1)))
+        descendants = self.evolve(population) if self.params.evolve else population
         return descendants
     
     @record_iteration_data
@@ -147,13 +141,10 @@ class Simulation:
             action = agent.choose_action(perception)
             agent.perform_action(environment, action)
     
-    # TODO not working
     def evolve(self, population):
         """
         Exchange old population with a new population.
         """
-        if not self.params.train_mode:
-            return population
         evolutionary_algorithm = EvolutionaryAlgorithm(self.params)
         # sort population after performance in descending order
         sorted_indices = np.argsort(self.fitnesses)[::-1]
@@ -187,11 +178,27 @@ class Params:
     Class that stores parameters of the simulation.
     """
     def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        # map agent type to class
+        agent_type_str = kwargs.get('type')
+        self.agent = self._get_agent_class(agent_type_str)
 
+        # only RnnAgents can evolve
+        self.evolve = self.agent == RnnAgent
+
+        for key, value in kwargs.items():
+            if key != 'type': 
+                setattr(self, key, value)
+        
         # one more for the initial positions
         self.simulation_steps = len(np.arange(0, self.total_time, self.delta_t)) + 1
+
+    def _get_agent_class(self, agent_type_str):
+        agent_classes = {
+            "RnnAgent": RnnAgent,
+            "BallisticAgent": BallisticAgent,
+            "LevyAgent": LévyAgent
+        }
+        return agent_classes.get(agent_type_str)
 
     @classmethod
     def from_json(cls, file_path):
@@ -205,6 +212,7 @@ class Params:
                      **data['evolution'], **data['simulation']}
         
         return cls(**flat_data)
+
 
 if __name__ == '__main__':
     print('')

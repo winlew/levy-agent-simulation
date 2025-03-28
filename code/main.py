@@ -16,11 +16,8 @@ def main():
     folder = input('Enter folder name to save simulation results under: ')
     params = Params.from_json('parameters.json')
 
-    # select agent class here
-    agent = RnnAgent
-    
     # execute simulation
-    sim = Simulation(params, agent)
+    sim = Simulation(params, params.agent)
     sim.run(folder)
     # visualize results
     data, environment, params = load_epoch_data(folder)

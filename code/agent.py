@@ -25,7 +25,8 @@ class Agent:
         self.food_mask = np.zeros(params.num_food, dtype=bool)
         self.meals = 0
         self.step = 0
-        self.ate = False # whether the agent ate at the previous time step
+        # whether the agent ate at the previous time step
+        self.ate = False
 
     def perceive(self, environment):
         """
@@ -161,9 +162,9 @@ class RnnAgent(Agent):
     Agent that is controlled by a Rnn.
     """
 
-    def __init__(self, params):
+    def __init__(self, params, model=None):
         super().__init__(params)
-        self.model = Rnn()
+        self.model = model if model else Rnn(params)
         self.hidden_state = torch.zeros(1, self.model.hidden_size)
 
     def perceive(self, environment):
@@ -259,13 +260,14 @@ class Rnn(nn.Module):
     The network is not trainable, because it is intended to be trained by an evolutionary algorithm across generations.
     """
 
-    def __init__(self, noise_neuron=True, hidden_size=4):
+    def __init__(self, params, noise_neuron=True, hidden_size=4):
         """
         Args:
             noise_neuron (bool): whether to include additional noise as input
             hidden_size (int): how many hidden neurons
         """
         super(Rnn, self).__init__()
+        self.params = params
         self.input_size = 2
         self.noise_neuron = noise_neuron
         if self.noise_neuron:

@@ -130,7 +130,7 @@ def write_parameters_to_text(params, folder):
     Writes the parameters from a JSON file to a text file for quick lookup.
     """
     folder_path = config.DATA_PATH / folder / 'parameters.txt'
-    params_dict = params.__dict__
+    params_dict = {key: value for key, value in params.__dict__.items() if key != 'agent'} 
     with open(folder_path, 'w') as text_file:
         json.dump(params_dict, text_file, indent=4)
 

@@ -1,10 +1,12 @@
 import numpy as np
 import torch
-from agent import Agent, Rnn
+from agent import *
 
 class EvolutionaryAlgorithm:
     """
     Evolutionary Algorithm class that trains the agent population by evolving them.
+
+    # TODO only works for RnnAgent class
     """
 
     def __init__(self, params):
@@ -51,7 +53,7 @@ class EvolutionaryAlgorithm:
             for child_weights, parent_weights in zip(child_model.parameters(), parent.model.parameters()):
                 parent_weights = self.zero_out_small_weights(parent_weights)
                 child_weights.data.copy_(parent_weights)
-            child = Agent(child_model, parent.params)
+            child = RnnAgent(parent.params, child_model)
             descendants.append(child)
 
         # MUTATION
@@ -63,7 +65,7 @@ class EvolutionaryAlgorithm:
             for child_weights, parent_weights in zip(child_model.parameters(), parent.model.parameters()):
                 child_weights.data.copy_(parent_weights)
             child_model = self.mutate(child_model)
-            child = Agent(child_model, parent.params)
+            child = RnnAgent(parent.params, child_model)
             descendants.append(child)
 
         # CROSSOVER
@@ -72,7 +74,7 @@ class EvolutionaryAlgorithm:
             parent1 = np.random.choice(descendants)
             parent2 = np.random.choice(descendants)
             child_model = self.crossover(parent1.model, parent2.model)
-            child = Agent(child_model, parent1.params)
+            child = RnnAgent(parent1.params, child_model)
             descendants.append(child)
 
         return descendants
