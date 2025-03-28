@@ -31,7 +31,7 @@ class Simulation:
         self.iteration = 0
         # per iteration store the position, direction, and whether agent consumed food at each time step
         self.trajectory_log = np.zeros((self.params.simulation_steps, self.population_size, config.NUM_MOTION_ATTRIBUTES))
-
+        self.mean_fitness_per_epoch = []
         self.data = initialize_epoch_data(self.params)
 
     def run(self, folder, population=None):
@@ -54,12 +54,12 @@ class Simulation:
         print('Starting simulation...')
         for epoch in tqdm(range(1, self.num_epochs + 1)):
             population = self.run_epoch(population, environment)
-            # TODO implement when fixing evolution
-            # if epoch % config.INTERVALL_SAVE == 0:
-            #    save_epoch_data(folder, self.data, population, epoch)
+            if epoch % config.INTERVALL_SAVE == 0:
+                save_epoch_data(folder, self.data, population, epoch)
         print('Saving simulation...')
         save_simulation_context(folder, environment, self.params)
         save_epoch_data(folder, self.data, population, self.params.num_epochs)
+        return self.mean_fitness_per_epoch
 
     def set_up_population(self, population):
         """
@@ -106,6 +106,7 @@ class Simulation:
             self.iteration += 1
         # sum up consumed food particles over all iterations and time steps
         self.fitnesses = np.asarray(np.sum(self.data['ate'], axis=(0,1)))
+        self.mean_fitness_per_epoch.append(np.mean(self.fitnesses))
         descendants = self.evolve(population) if self.params.evolve else population
         return descendants
     
