@@ -21,7 +21,7 @@ def save_population(population, folder):
     folder_path = config.DATA_PATH / folder 
     folder_path.mkdir(parents=True, exist_ok=True)
     for i, agent in enumerate(population):
-        if agent.model:
+        if hasattr(agent, 'model'):
             torch.save(agent.model.state_dict(), folder_path / f'agent_{i}.pth')
 
 def load_population(folder):
