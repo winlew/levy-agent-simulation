@@ -29,7 +29,11 @@ class Simulation:
         self.population_size = params.population_size
         
         self.iteration = 0
-        # per iteration store the position, direction, and whether agent consumed food at each time step
+        # used to store
+        # - position
+        # - direction
+        # - whether agent consumed food
+        # for every time step in a single iteration
         self.trajectory_log = np.zeros((self.params.simulation_steps, self.population_size, config.NUM_MOTION_ATTRIBUTES))
         self.mean_fitness_per_epoch = []
         self.data = initialize_epoch_data(self.params)
@@ -40,12 +44,12 @@ class Simulation:
 
         Each epoch:
         - evaluates the performance of each agent iterations_per_epoch times where
-            Each iteration:
-            - simulates the agent behaviour for simulation_steps time steps
+          Each iteration:
+          - simulates the agents behaviors for simulation_steps time steps
         - evolves the population
 
         Args:
-            folder (str): store the simulation results in
+            folder (str): store the simulation results here
             population (list): list of agents
         """
         environment = Environment(self.params)
@@ -65,6 +69,9 @@ class Simulation:
         """
         Either use an existing population or create a population from scratch by instantiating
         agents with the agent class.
+
+        Args:
+            population (list): list of agents
         """
         if population:
             return population  
@@ -72,9 +79,7 @@ class Simulation:
     
     def record_iteration_data(func):
         """
-        Decorator to be called after each iteration.
-        - keeps track of the meals each agent consumed in the iteration
-        - stores the movement data of each agent
+        Decorator to update the current epoch with the data from one iteration.
         """
         def wrapper(self, population, environment):
             result = func(self, population, environment)
@@ -84,7 +89,8 @@ class Simulation:
 
     def record_move(func):
         """
-        Decorator to store movement data of each agent at the time step.        
+        Decorator to update the current iteration with the data from one step.
+        Requires the wrapped function to be passed the step number.
         """
         def wrapper(self, population, environment, *args, **kwargs):
             result = func(self, population, environment, *args, **kwargs)
@@ -94,11 +100,17 @@ class Simulation:
 
     def run_epoch(self, population, environment):
         """
-        Trains the population for a single epoch.
+        Executes a single epoch:
         - simulate agent foraging for all iterations
         - evaluate the performance of each agent
-        - evolve the population
-        Returns the next generation.
+        - evolve the population.
+
+        Args:  
+            population (list): list of agents
+            environment (Environment): the environment the agents navigate in
+
+        Returns:
+            descendants (list): list of agents, the next generation
         """
         self.iteration = 0
         for _ in range(self.iterations_per_epoch):
@@ -113,16 +125,24 @@ class Simulation:
     @record_iteration_data
     def run_iteration(self, population, environment):
         """
-        Simulate the agent behaviour for a certain time in a single iteration.
+        Executes a singe iteration that simulates agent foraging for a certain time.
+        
+        Args:
+            population (list): list of agents
+            environment (Environment): the environment the agents navigate in
         """
-        self.recycle_agents(population, environment, step=0)
+        self.recycle_agents(population, environment, step = 0)
         for step in range(self.params.simulation_steps - 1):
-            self.simulate_step(population, environment, step=step + 1)
+            self.simulate_step(population, environment, step = step + 1)
 
     @record_move
     def recycle_agents(self, population, environment, *args, **kwargs):
         """
         Reset agents so they can be reused in the next iteration.
+
+        Args:
+            population (list): list of agents
+            environment (Environment): the environment the agents navigate in
         """
         for agent in population:
             agent.reset()
@@ -136,6 +156,10 @@ class Simulation:
             - choose an action
             - perform the action.
         This logic is followed by every agent.
+
+        Args:
+            population (list): list of agents
+            environment (Environment): the environment the agents navigate in
         """
         for agent in population:
             perception = agent.perceive(environment)
@@ -145,17 +169,27 @@ class Simulation:
     def evolve(self, population):
         """
         Exchange old population with a new population.
+
+        Args:   
+            population (list): list of agents
+
+        Returns:
+            descendants (list): list of agents
         """
         evolutionary_algorithm = EvolutionaryAlgorithm(self.params)
         # sort population after performance in descending order
         sorted_indices = np.argsort(self.fitnesses)[::-1]
         sorted_population = [population[i] for i in sorted_indices]
-        new_population = evolutionary_algorithm.evolve(sorted_population) 
-        return new_population
+        descendants = evolutionary_algorithm.evolve(sorted_population) 
+        return descendants
 
     def collect_data(self, population, step):
         """
-        Logs the position, direction and whether the agent consumed food for each agent at the given step.
+        Logs position, direction and whether the agent consumed food for each agent at the given step.
+
+        Args:
+            population (list): list of agents
+            step (int): current time step
         """
         for i, agent in enumerate(population):
             self.trajectory_log[step, i] = [agent.position[0], agent.position[1], agent.direction, False]

@@ -9,9 +9,8 @@ def main():
     Saves 
     - environment,
     - parameters and 
-    - agent movement data
-    in a folder named after the current date and time.
-    Creates an animation of the simulation and a plot of the average population fitness.
+    - agent motion.
+    Creates an animation of the last epoch of the simulation and plots the average population fitness.
     """
     folder = input('Enter folder name to save simulation results under: ')
     params = Params.from_json('parameters.json')

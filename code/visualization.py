@@ -10,7 +10,7 @@ import multiprocessing as mp
 def plot_fitness_log(population_fitness_log, folder):
     plt.plot(population_fitness_log)
     plt.xlabel('Epoch')
-    plt.ylabel('Summed Number of Consumed Food Particles of all Agents')
+    plt.ylabel('Mean Fitness')
     plt.title('Fitness Log of the Population')
     folder_path = config.DATA_PATH / folder / 'fitness_log.png'
     plt.savefig(folder_path)

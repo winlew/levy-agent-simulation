@@ -1,6 +1,6 @@
 import torch
 import glob
-from agent import Agent, Rnn
+from agent import RnnAgent, Rnn, Agent
 import pickle
 import numpy as np
 import xarray as xr
@@ -13,15 +13,26 @@ import os
 def save_population(population, folder):
     """
     Saves a population to files.
+
+    Args:
+        population (list): list of agents
+        folder (str): folder to save the population in
     """
     folder_path = config.DATA_PATH / folder 
     folder_path.mkdir(parents=True, exist_ok=True)
     for i, agent in enumerate(population):
-        torch.save(agent.model.state_dict(), folder_path / f'agent_{i}.pth')
+        if agent.model:
+            torch.save(agent.model.state_dict(), folder_path / f'agent_{i}.pth')
 
 def load_population(folder):
     """
     Loads a population from files and returns it.
+
+    Args:
+        folder (str): folder to load the population from
+
+    Returns:
+        population (list): list of agents
     """
     params = load_parameters(folder)
     population = []
@@ -29,13 +40,13 @@ def load_population(folder):
     for file in glob.glob(str(path / f'population{params.num_epochs}/agent_*.pth')):
         model = Rnn(params)
         model.load_state_dict(torch.load(file, weights_only=False))
-        agent = Agent(model, params)
+        agent = RnnAgent(params, model=model)
         population.append(agent)
     return population
 
 def initialize_epoch_data(params):
     """
-    Initializes a xarray dataset to store the simulation results or a single epoch.
+    Initializes a xarray dataset to store the simulation results of a single epoch.
 
     x_position: of each agent at each time step in each iteration
     y_position: of each agent at each time step in each iteration
@@ -62,7 +73,12 @@ def initialize_epoch_data(params):
     
 def update_epoch_data(data, iteration, trajectory_log):
     """
-    Meant to be called to update the data for a single epoch in each iteration.
+    Updates the data for a single epoch with the results of a single iteration.
+    
+    Args:
+        data (xr.Dataset): dataset to store the simulation results
+        iteration (int): index of the iteration
+        trajectory_log (np.array): trajectory of the agents in the current iteration
     """
     data["x_position"].loc[iteration, :, :] = trajectory_log[:, :, 0]
     data["y_position"].loc[iteration, :, :] = trajectory_log[:, :, 1]
@@ -71,9 +87,14 @@ def update_epoch_data(data, iteration, trajectory_log):
 
 def save_simulation_context(folder, environment, params):
     """
-    Saves the immutable settings of the simulation.
+    Saves the immutable settings:
     - the environment
-    - simulation parameters
+    - simulation parameters.
+
+    Args:
+        folder (str): folder to save the simulation context in
+        environment (Environment): environment of the simulation
+        params (Params): parameters of the simulation
     """
     folder_path = config.DATA_PATH / folder
     folder_path.mkdir(parents=True, exist_ok=True)
@@ -85,25 +106,29 @@ def save_simulation_context(folder, environment, params):
 
 def save_epoch_data(folder, data, population, epoch):
     """
-    Save the results of a single epoch.
-    - agent movement and food consumption
-    - population
+    Make a snapshot of the results of a single epoch:
+    - agent motion
+    - population.
+    
+    Args:
+        folder (str): folder to save the simulation results in
+        data (xr.Dataset): dataset with the simulation results of all iterations
+        population (list): list of agents
+        epoch (int): index of the epoch
     """
     folder_path = config.DATA_PATH / folder
     folder_path.mkdir(parents=True, exist_ok=True)
     data.to_netcdf(folder_path / f'epoch_{epoch}.nc')
-
-    # TODO implement saving populations
-    # if population:
-    #     save_population(population, folder + f'/population{epoch}')
+    if population:
+        save_population(population, folder + f'/population{epoch}')
 
 def load_epoch_data(folder, epoch=None):
     """
-    Load the simulation results.
     Loads:
-        - the environment
-        - agent data
-        - parameters
+    - environment
+    - agent motion data
+    - parameters
+    from a single epoch of a simulation.
     If epoch is not None, load the data of a specific epoch.
     """
     params = load_parameters(folder)
@@ -140,10 +165,8 @@ def extract_gif_frames(folder, file_name):
     """
     path = config.DATA_PATH / folder / file_name
     gif = Image.open(path)
-
     output_folder = config.DATA_PATH / folder / f"frames_{file_name}"
     output_folder.mkdir(parents=True, exist_ok=True)
-
     for i in range(gif.n_frames):
         gif.seek(i)
         gif.save(os.path.join(output_folder, f"frame_{i}.png"))
