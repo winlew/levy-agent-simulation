@@ -37,7 +37,7 @@ def load_population(folder):
     params = load_parameters(folder)
     population = []
     path = Path(config.DATA_PATH) / folder    
-    for file in glob.glob(str(path / f'population{params.num_epochs}/agent_*.pth')):
+    for file in glob.glob(str(path / f'population_at_epoch_{params.num_epochs}/agent_*.pth')):
         model = Rnn(params)
         model.load_state_dict(torch.load(file, weights_only=False))
         agent = RnnAgent(params, model=model)
@@ -120,7 +120,7 @@ def save_epoch_data(folder, data, population, epoch):
     folder_path.mkdir(parents=True, exist_ok=True)
     data.to_netcdf(folder_path / f'epoch_{epoch}.nc')
     if population:
-        save_population(population, folder + f'/population{epoch}')
+        save_population(population, folder + f'/population_at_epoch_{epoch}')
 
 def load_epoch_data(folder, epoch=None):
     """
