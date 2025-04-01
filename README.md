@@ -97,8 +97,8 @@ In world perspective 0 is 3 o'clock.
 
 Note: For ego perspective clockwise is negative and counter-clockwise is positive.
 
-# Coding Standards
-Conventions to ensure consistency in the project. 
+# Coding Conventions
+Standards to ensure consistency in the project. 
 Regarding the structure I tried to modularize by files. All parameters are collected in the parameter class but each class only extracts the parameters it needs.
 - Docstring format inspired by Google:
 
