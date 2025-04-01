@@ -193,6 +193,8 @@ class Simulation:
         """
         for i, agent in enumerate(population):
             self.trajectory_log[step, i] = [agent.position[0], agent.position[1], agent.direction, False]
+            # this function is called after the agent has moved
+            # so the ate value has to be stored for the previous step
             self.trajectory_log[step - 1, i, 3] = agent.ate
 
     
