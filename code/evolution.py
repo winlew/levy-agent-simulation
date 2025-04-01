@@ -6,7 +6,6 @@ class EvolutionaryAlgorithm:
     """
     Evolutionary Algorithm class that trains the agent population by evolving them.
 
-    # TODO only works for RnnAgent class
     """
 
     def __init__(self, params):
@@ -36,7 +35,7 @@ class EvolutionaryAlgorithm:
         Only the elite of the current population serves as parents for the next generation.
 
         Args:
-            population (list): list of agents (expected to be sorted by fitness)
+            population (list): list of agents (expected to be sorted by fitness and to be of type RnnAgent)
         
         Returns:
             list: list of new agents

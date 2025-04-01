@@ -149,7 +149,6 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
 
 def plot_traces(ax, env, params, data, frame, color_dict):
     # plot agent traces
-    # TODO first trace is not shown
     number_of_traces = params.simulation_steps
     i = 1
     velocity = params.velocity
@@ -189,7 +188,7 @@ def plot_lines(env, data_matrix, alpha, color, linewidth, ax):
 
         ### Parts crossing the boundary
         # Overlap with left border?
-        if x+np.cos(direction)*length<0: # TODO: boundary conditions correct implemented?
+        if x+np.cos(direction)*length<0: 
             xs = np.linspace(x+env.size, x+env.size+np.cos(direction)*length,10)
             ax.plot(xs,yn,color=color, alpha=alpha, linewidth=linewidth)
             # In lower corner?

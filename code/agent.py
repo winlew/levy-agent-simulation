@@ -67,8 +67,7 @@ class Agent:
         # do not check path on first step
         if self.last_position is None:
             return
-        # TODO check path is not periodic boundary safe!
-        # if a periodic boundary got crossed, disable check path for now
+        # do not check_path if boundary got crossed 
         if abs(self.last_position[0] - self.position[0]) >  environment.size / 2 or abs(self.last_position[1] - self.position[1]) > environment.size / 2:
             return
         point1 = Point(self.last_position[0], self.last_position[1])

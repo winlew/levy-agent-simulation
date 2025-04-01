@@ -34,7 +34,7 @@ def calculate_angle_difference(food_direction, agent_direction):
     delta = (food_direction + np.pi - agent_direction) % (2 * np.pi) - np.pi
     return delta
 
-# TODO refactor and understand this logic does not work for periodic boundaries
+# TODO refactor and understand. This logic does not work for periodic boundaries
 def counter_clockwise(p1, p2, p3):
     return (p3[1]-p1[1]) * (p2[0]-p1[0]) > (p2[1]-p1[1]) * (p3[0]-p1[0])
 
