@@ -97,6 +97,11 @@ In world perspective 0 is 3 o'clock.
 
 Note: For ego perspective clockwise is negative and counter-clockwise is positive.
 
+# Limitations
+- agents can eat at max 1 food particle at each time step
+- food particles have to have a minimal distance that is larger than perception_radius from each other
+- check_path() is not periodic boundary safe but does not have to be either if border_buffer > velocity
+
 # Coding Conventions
 Standards to ensure consistency in the project. 
 Regarding the structure I tried to modularize by files. All parameters are collected in the parameter class but each class only extracts the parameters it needs.

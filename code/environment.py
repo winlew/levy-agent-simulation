@@ -29,8 +29,6 @@ class Environment:
             self.food_positions = self.generate_food_positions(params.border_buffer, params.food_buffer)
         
         self.walls = []
-        # TODO do not do this in the class definition
-        # self.add_wall(np.array([0, 0]), np.array([self.size, self.size]))
     
     def add_wall(self, start, end):
         """
