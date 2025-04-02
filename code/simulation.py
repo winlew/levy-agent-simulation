@@ -163,8 +163,8 @@ class Simulation:
         """
         for agent in population:
             perception = agent.perceive(environment)
-            action = agent.choose_action(perception)
-            agent.perform_action(environment, action)
+            agent.choose_action(perception)
+            agent.perform_action(environment)
     
     def evolve(self, population):
         """

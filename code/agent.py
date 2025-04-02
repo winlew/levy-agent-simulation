@@ -144,7 +144,7 @@ class LévyAgent(Agent):
             step_length = int(1 / x**(1/self.mu))
             self.pending_steps = step_length
     
-    def perform_action(self, environment, _):
+    def perform_action(self, environment):
         """
         Calculate the next position and move the agent.
 
@@ -179,7 +179,7 @@ class BrownianAgent(Agent):
             step_length = int(abs(np.random.normal(self.mean, self.variance))) + 1
             self.pending_steps = step_length
     
-    def perform_action(self, environment, _):
+    def perform_action(self, environment):
         """
         Calculate the next position and move the agent.
 
@@ -202,7 +202,7 @@ class BallisticAgent(Agent):
         """
         pass
     
-    def perform_action(self, environment, _):
+    def perform_action(self, environment):
         """
         Calculate the next position and move the agent.
         Args:
@@ -285,9 +285,9 @@ class RnnAgent(Agent):
         angle = torch.tanh(output[1]).numpy() * np.pi
         # transform angle to world perspective
         direction = (self.direction + steering_command * angle) % (2 * np.pi)
-        return direction
+        self.direction = direction
 
-    def perform_action(self, environment, direction):
+    def perform_action(self, environment):
         """
         Calculate the next position and move the agent.
 
@@ -295,7 +295,6 @@ class RnnAgent(Agent):
             environment (Environment): the environment the agent navigates in
             direction (float): angle in world perspective (where the agent turns next)
         """
-        self.direction = direction
         new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
         self.move(new_position, environment)
 
