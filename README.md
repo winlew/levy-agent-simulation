@@ -38,6 +38,7 @@ The positioning of the agent in the environment is described by
 There are multiple agent types:
 - Ballistic agent (walks straight only)
 - Lévy agent (follow Lévy walk like motion patterns)
+- Brownian agent (follows brownian motion)
 - RNN agent (behavior is controlled by a hybrid 3 layer neural network)
 
 ## Training

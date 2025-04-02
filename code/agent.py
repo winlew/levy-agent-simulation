@@ -156,6 +156,41 @@ class LévyAgent(Agent):
         new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
         self.move(new_position, environment)
 
+class BrownianAgent(Agent):
+    """
+    A blind agent that follows Brownian motion.
+    """
+
+    def __init__(self, params):
+        super().__init__(params)
+        # agent is blind, so it only senses food particles that are within its body 
+        self.perception_radius = params.eat_radius
+        # parameters of the normal distribution
+        self.mean = 0
+        self.variance = 1
+        self.pending_steps = 0
+
+    def choose_action(self, _):
+        """
+        Agent chooses a random direction and a step length according to a normal distribution.
+        """
+        if self.pending_steps == 0:
+            self.direction = np.random.uniform(0, 2*np.pi)
+            step_length = int(abs(np.random.normal(self.mean, self.variance))) + 1
+            self.pending_steps = step_length
+    
+    def perform_action(self, environment, _):
+        """
+        Calculate the next position and move the agent.
+
+        Args:
+            environment (Environment): the environment the agent navigates in
+            _ (None): unused
+        """
+        self.pending_steps -= 1
+        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
+        self.move(new_position, environment)
+
 class BallisticAgent(Agent):
     """
     A blind agent that moves straight and never turns.

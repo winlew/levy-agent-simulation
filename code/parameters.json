@@ -1,6 +1,6 @@
 {
     "agent": {
-        "type": "RnnAgent",
+        "type": "brownian",
         "eat_radius": 0.5,
         "velocity": 1,
         "perception_radius": 3

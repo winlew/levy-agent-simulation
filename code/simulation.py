@@ -231,9 +231,10 @@ class Params:
 
     def _get_agent_class(self, agent_type_str):
         agent_classes = {
-            "RnnAgent": RnnAgent,
-            "BallisticAgent": BallisticAgent,
-            "LevyAgent": LévyAgent
+            "rnn": RnnAgent,
+            "ballistic": BallisticAgent,
+            "levy": LévyAgent,
+            "brownian": BrownianAgent 
         }
         return agent_classes.get(agent_type_str)
 
