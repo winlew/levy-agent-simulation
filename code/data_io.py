@@ -1,6 +1,7 @@
 import torch
 import glob
-from agent import RnnAgent, Rnn, Agent
+from agent import RnnAgent, Rnn
+from config import Params
 import pickle
 import numpy as np
 import xarray as xr
@@ -9,6 +10,7 @@ import config
 import json
 from PIL import Image
 import os
+import shutil
 
 def save_population(population, folder):
     """
@@ -21,7 +23,7 @@ def save_population(population, folder):
     folder_path = config.DATA_PATH / folder 
     folder_path.mkdir(parents=True, exist_ok=True)
     for i, agent in enumerate(population):
-        if hasattr(agent, 'model'):
+        if (isinstance(agent, RnnAgent)):
             torch.save(agent.model.state_dict(), folder_path / f'agent_{i}.pth')
 
 def load_population(folder):
@@ -37,7 +39,7 @@ def load_population(folder):
     params = load_parameters(folder)
     population = []
     path = Path(config.DATA_PATH) / folder    
-    for file in glob.glob(str(path / f'population_at_epoch_{params.num_epochs}/agent_*.pth')):
+    for file in glob.glob(str(path / f'/log/agents_at_epoch_{params.num_epochs}/agent_*.pth')):
         model = Rnn(params)
         model.load_state_dict(torch.load(file, weights_only=False))
         agent = RnnAgent(params, model=model)
@@ -100,9 +102,7 @@ def save_simulation_context(folder, environment, params):
     folder_path.mkdir(parents=True, exist_ok=True)
     with open(folder_path / 'environment.pkl', 'wb') as f:
         pickle.dump(environment, f)
-    with open(folder_path / 'parameters.pkl', 'wb') as f:
-        pickle.dump(params, f)
-    write_parameters_to_text(params, folder)
+    shutil.copyfile('code/parameters.json', folder_path / 'parameters.json')
 
 def save_epoch_data(folder, data, population, epoch):
     """
@@ -116,11 +116,11 @@ def save_epoch_data(folder, data, population, epoch):
         population (list): list of agents
         epoch (int): index of the epoch
     """
-    folder_path = config.DATA_PATH / folder
+    folder_path = config.DATA_PATH / folder / 'log'
     folder_path.mkdir(parents=True, exist_ok=True)
     data.to_netcdf(folder_path / f'epoch_{epoch}.nc')
     if population:
-        save_population(population, folder + f'/population_at_epoch_{epoch}')
+        save_population(population, folder + f'/log/agents_at_epoch_{epoch}')
 
 def load_epoch_data(folder, epoch=None):
     """
@@ -134,9 +134,9 @@ def load_epoch_data(folder, epoch=None):
     params = load_parameters(folder)
     folder_path = config.DATA_PATH / folder
     if epoch is None:
-        data = xr.open_dataset(folder_path / f'epoch_{params.num_epochs}.nc')
+        data = xr.open_dataset(folder_path / 'log' / f'epoch_{params.num_epochs}.nc')
     else:
-        data = xr.open_dataset(folder_path / f'epoch_{epoch}.nc')
+        data = xr.open_dataset(folder_path / 'log' / f'epoch_{epoch}.nc')
     with open(folder_path / 'environment.pkl', 'rb') as f:
         environment = pickle.load(f)
     return data, environment, params
@@ -146,18 +146,8 @@ def load_parameters(folder):
     Load the simulation parameters.
     """
     folder_path = config.DATA_PATH / folder
-    with open(folder_path / 'parameters.pkl', 'rb') as f:
-        params = pickle.load(f)
+    params = Params.from_json(folder_path / 'parameters.json')  
     return params
-
-def write_parameters_to_text(params, folder):
-    """
-    Writes the parameters from a JSON file to a text file for quick lookup.
-    """
-    folder_path = config.DATA_PATH / folder / 'parameters.txt'
-    params_dict = {key: value for key, value in params.__dict__.items() if key != 'agent'} 
-    with open(folder_path, 'w') as text_file:
-        json.dump(params_dict, text_file, indent=4)
 
 def extract_gif_frames(folder, file_name):
     """

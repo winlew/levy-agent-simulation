@@ -1,8 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import math
-from utils import *
+from utils import Point, rectangle_from_points, inside_rectangle, vector_to_angle, calculate_angle_difference, intersect
 
 class Agent:
     """
@@ -114,6 +113,7 @@ class Agent:
         self.meals = 0
         self.position = np.array(np.random.uniform(0, self.params.size, 2))
         self.direction = np.random.uniform(0, 2*np.pi)
+        self.ate = False
 
 
 class LévyAgent(Agent):
@@ -307,7 +307,53 @@ class RnnAgent(Agent):
         self.position = np.array(np.random.uniform(0, self.params.size, 2))
         self.direction = np.random.uniform(0, 2*np.pi)
         self.hidden_state = torch.zeros(1, self.model.hidden_size)
+        self.ate = False
 
+class ReservoirAgent(Agent):
+    """
+    A blind agent that is controlled by an Echo State Network (ESN).
+    """
+
+    def __init__(self, params, model = None):
+        super().__init__(params)
+        self.params = params
+        if model is None:
+            self.model = Reservoir(params.simulation_steps)
+            self.model.run()
+        else:
+            self.model = model
+        self.time_step = 0
+
+    def choose_action(self, _):
+        """
+        Scale the direction with the output of the neural reservoir.
+        """
+        output = self.model.get_output(self.time_step)
+        angle = output * 2 * np.pi
+        direction = (self.direction + angle) % (2 * np.pi)
+        self.direction = direction
+        self.time_step += 1
+
+    def perform_action(self, environment):
+        """
+        Calculate the next position and move the agent.
+        Args:
+            environment (Environment): the environment the agent navigates in
+            _ (None): unused
+        """
+        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
+        self.move(new_position, environment)
+
+    def reset(self):
+        """
+        Reset the agent to its initial state.
+        """
+        self.food_mask = np.zeros(self.params.num_food, dtype=bool)
+        self.meals = 0
+        self.position = np.array(np.random.uniform(0, self.params.size, 2))
+        self.direction = np.random.uniform(0, 2*np.pi)
+        self.time_step = 0
+        self.ate = False
 
 class Rnn(nn.Module):
     """
@@ -369,3 +415,51 @@ class Rnn(nn.Module):
         # is of interest as it contains processed information from all previous time steps
         output = self.fc(hidden_output[-1, :])
         return output, hidden_state
+
+class Reservoir():
+    """
+    A set of neurons that are randomly connected to each other.
+    The neurons are randomly activated at the beginning and can be in two states: on or off.
+    A neuron is activated if exactly one of its neighbors was active at the previous time step.
+    """
+
+    def __init__(self, time_steps, num_neurons=300, connection_probability=0.01, initially_active_ratio=0.01):
+        """
+        Args:
+            num_neurons (int): number of neurons in the reservoir
+            connection_probability (float): probability of a connection between two neurons
+            initially_active_ratio (float): ratio of initially active neurons
+        """
+        self.time_steps = time_steps
+        self.num_neurons = num_neurons
+        self.connection_probability = connection_probability
+        self.initially_active_ratio = initially_active_ratio
+        self.connection_matrix = np.random.random((num_neurons, num_neurons)) < connection_probability
+        self.neuron_state_time_matrix = np.zeros((time_steps, num_neurons), dtype=int)
+        # randomly activate 10% of neurons initially
+        self.neuron_state_time_matrix[0] = (np.random.random(num_neurons) < initially_active_ratio).astype(int)
+
+        # weights connecting each neuron to the output node
+        self.weights = np.random.uniform(-1, 1, num_neurons)
+
+    def run(self):
+        """
+        Simulate network activity over time.
+        """
+        for t in range(1, self.time_steps):
+            # for each neuron, check if any of its connected neighbors were active at t-1
+            for i in range(self.num_neurons):
+                # get all neurons that connect to neuron i
+                neighbors = np.where(self.connection_matrix[:, i])[0]
+                # check if any neighbors were active at previous time step
+                if np.sum(self.neuron_state_time_matrix[t - 1, neighbors] == 1) == 1:
+                    self.neuron_state_time_matrix[t, i] = 1
+
+    def get_output(self, time_step):
+        """
+        Multiply the state of the reservoir at the given time_step with its weight.
+        Apply the sigmoid function to the weighted sum.
+        """
+        output = np.dot(self.neuron_state_time_matrix[time_step], self.weights)
+        output = 1 / (1 + np.exp(-output))
+        return output

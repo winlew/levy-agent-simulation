@@ -58,7 +58,7 @@ class Simulation:
         print('Starting simulation...')
         for epoch in tqdm(range(1, self.num_epochs + 1)):
             population = self.run_epoch(population, environment)
-            if epoch % config.INTERVALL_SAVE == 0:
+            if epoch % self.params.intervall_save == 0 or epoch == 1:
                 save_epoch_data(folder, self.data, population, epoch)
         print('Saving simulation...')
         save_simulation_context(folder, environment, self.params)
@@ -180,7 +180,7 @@ class Simulation:
         # sort population after performance in descending order
         sorted_indices = np.argsort(self.fitnesses)[::-1]
         sorted_population = [population[i] for i in sorted_indices]
-        descendants = evolutionary_algorithm.evolve(sorted_population) 
+        descendants = evolutionary_algorithm.evolve(sorted_population, self.params.agent) 
         return descendants
 
     def collect_data(self, population, step):
@@ -209,48 +209,6 @@ def record_time(func):
         print('Time:', time.time() - start)
         return result
     return wrapper
-
-class Params:
-    """
-    Class that stores parameters of the simulation.
-    """
-    def __init__(self, **kwargs):
-        # map agent type to class
-        agent_type_str = kwargs.get('type')
-        self.agent = self._get_agent_class(agent_type_str)
-
-        # only RnnAgents can evolve
-        self.evolve = self.agent == RnnAgent
-
-        for key, value in kwargs.items():
-            if key != 'type': 
-                setattr(self, key, value)
-        
-        # one more for the initial positions
-        self.simulation_steps = len(np.arange(0, self.total_time, self.delta_t)) + 1
-
-    def _get_agent_class(self, agent_type_str):
-        agent_classes = {
-            "rnn": RnnAgent,
-            "ballistic": BallisticAgent,
-            "levy": LévyAgent,
-            "brownian": BrownianAgent 
-        }
-        return agent_classes.get(agent_type_str)
-
-    @classmethod
-    def from_json(cls, file_path):
-        base_dir = os.path.dirname(__file__)
-        file_path = os.path.join(base_dir, file_path)
-        
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-        
-        flat_data = {**data['agent'], **data['environment'], 
-                     **data['evolution'], **data['simulation']}
-        
-        return cls(**flat_data)
-
 
 if __name__ == '__main__':
     print('')

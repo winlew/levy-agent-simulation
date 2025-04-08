@@ -1,19 +1,19 @@
 {
     "agent": {
-        "type": "brownian",
+        "type": "reservoir",
         "eat_radius": 0.5,
         "velocity": 1,
         "perception_radius": 3
     },
     "environment": {
         "num_food": 10,
-        "size": 30,
+        "size": 50,
         "border_buffer": 5,
         "food_buffer": 5,
         "empty": false
     },
     "evolution": {
-        "population_size": 10,
+        "population_size": 20,
         "elite_fraction": 0.4,
         "mutation_fraction": 0.4,
         "mutation_rate": 0.1,
@@ -21,9 +21,12 @@
         "tolerance": 0.1
     },
     "simulation": {
-        "total_time": 99,
+        "total_time": 149,
         "delta_t": 1,
         "num_epochs": 100,
-        "iterations_per_epoch": 3
+        "iterations_per_epoch": 1
+    },
+    "settings": {
+        "intervall_save": 20
     }
 }

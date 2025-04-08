@@ -6,6 +6,14 @@ from pathlib import Path
 from tqdm import tqdm
 import config
 import multiprocessing as mp
+from data_io import load_epoch_data, extract_gif_frames
+
+def visualize(folder):
+    _, environment, params = load_epoch_data(folder)
+    for i in range(0, params.num_epochs // params.intervall_save + 1):
+        epoch = 1 if (i == 0) else i * params.intervall_save
+        data, _, _ = load_epoch_data(folder, epoch)
+        animate(environment, params, data, folder_name=folder, file_name=f'animation_{epoch}')
 
 def plot_fitness_log(population_fitness_log, folder):
     plt.plot(population_fitness_log)

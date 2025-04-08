@@ -1,7 +1,6 @@
-from simulation import Simulation, Params
-from visualization import animate, plot_fitness_log
-from data_io import load_epoch_data, extract_gif_frames
-from agent import *
+from simulation import Simulation
+from config import Params
+from visualization import visualize, plot_fitness_log
 
 def main():
     """
@@ -19,9 +18,7 @@ def main():
     sim = Simulation(params, params.agent)
     mean_fitness_per_epoch = sim.run(folder)
     # visualize results
-    data, environment, params = load_epoch_data(folder)
-    animate(environment, params, data, folder_name=folder)
-    extract_gif_frames(folder, 'animation1.gif')
+    visualize(folder)
     plot_fitness_log(mean_fitness_per_epoch, folder)
 
 if __name__ == '__main__':
