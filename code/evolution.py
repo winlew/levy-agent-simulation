@@ -134,6 +134,9 @@ class EvolutionaryAlgorithm:
         """
         Evolutionary Algorithm for the ReservoirAgent.
         """
+
+        raise NotImplementedError("ReservoirAgent evolution is crap.")
+    
         descendants = []
         # num_parents = int(self.population_size * self.elite_fraction)
         num_parents = 1
@@ -143,7 +146,7 @@ class EvolutionaryAlgorithm:
         # copy parents to the next generation, but set small weights to zero
         for parent in parents:
             child = ReservoirAgent(self.params, model = copy.deepcopy(parent.model))
-            child.model.weights = self.zero_out_small_weights(child.model.weights)
+            child.model.output_weights = self.zero_out_small_weights(child.model.output_weights)
             child.model.run()
             descendants.append(child)
         
@@ -152,7 +155,7 @@ class EvolutionaryAlgorithm:
         for _ in range(int(self.population_size * self.mutation_fraction)):
             parent = np.random.choice(parents[:int(self.elite_fraction * self.population_size)])
             child = ReservoirAgent(self.params, model = copy.deepcopy(parent.model))
-            child.model.weights = copy.deepcopy(self.mutate_reservoir(child.model.weights))
+            child.model.output_weights = copy.deepcopy(self.mutate_reservoir(child.model.output_weights))
             child.model.run()
             # child = ReservoirAgent(self.params)
             descendants.append(child)
@@ -164,7 +167,7 @@ class EvolutionaryAlgorithm:
             parent2 = np.random.choice(descendants)
             child = ReservoirAgent(parent1.params, model = copy.deepcopy(parent1.model))
             # TODO there is something fishy with the parent2 here - is same to parent 1??
-            child.model.weights = copy.deepcopy(self.crossover_reservoir(parent1.model.weights, parent2.model.weights))
+            child.model.output_weights = copy.deepcopy(self.crossover_reservoir(parent1.model.weights, parent2.model.weights))
             child.model.run()
             # child = ReservoirAgent(self.params)
             descendants.append(child)

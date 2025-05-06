@@ -33,13 +33,17 @@ class Params:
         agent_type_str = kwargs.get('type')
         self.agent = self._get_agent_class(agent_type_str)
 
-        # TODO
-        # only RnnAgents can evolve
-        self.evolve = True # self.agent == RnnAgent
-
         for key, value in kwargs.items():
             if key != 'type': 
                 setattr(self, key, value)
+
+        # only RnnAgents can evolve
+        if self.agent == agent_classes['rnn']:
+            self.evolve = True
+        else:
+            self.evolve = False
+            if self.num_epochs > 1:
+                raise UserWarning('Evolution is only supported for RnnAgents. Set num_epochs to 1.')
         
         # one more for the initial positions
         self.simulation_steps = len(np.arange(0, self.total_time, self.delta_t)) + 1
