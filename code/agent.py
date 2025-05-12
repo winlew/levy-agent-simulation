@@ -39,8 +39,7 @@ class Agent:
         self.meals = 0
         # whether the agent ate at the previous time step
         self.ate = False
-        self.step = 0
-
+    
     def perceive(self, environment):
         """
         Sense environment for food particles around current position.
@@ -90,7 +89,6 @@ class Agent:
             new_position (np.array): new position of the agent
             environment (Environment): the environment the agent navigates in
         """
-        self.step += 1
         for wall in environment.walls:
             if intersect(self.position, new_position, wall[0], wall[1]):
                 return
