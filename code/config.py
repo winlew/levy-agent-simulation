@@ -14,8 +14,8 @@ MAX_FOOD_GENERATION_ATTEMPTS = 1000
 
 MAX_PROCESSES = min(mp.cpu_count(), 5)
 
+# agent class to string mapping that is used to select the agent class in parameters.json
 from agent import RnnAgent, BallisticAgent, LévyAgent, BrownianAgent, ReservoirAgent
-
 agent_classes = {
     "rnn": RnnAgent,
     "ballistic": BallisticAgent,
@@ -37,7 +37,7 @@ class Params:
             if key != 'type': 
                 setattr(self, key, value)
 
-        # only RnnAgents can evolve
+        # only rnn agents can evolve
         if self.agent == agent_classes['rnn']:
             self.evolve = True
         else:

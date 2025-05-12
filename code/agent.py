@@ -13,7 +13,7 @@ class Agent:
     Agents move with a constant velocity in the environment.
     The positioning of the agent in the environment is described by:
     - its 2D position
-    - the direction it faces in world perspective (0 to 2pi)
+    - the direction it faces in world perspective (0 to 2pi).
     The perception radius determines how far the agent can sense food particles.
     The agent eats food particles that are within its eat radius.
 
@@ -123,7 +123,6 @@ class Agent:
 class LévyAgent(Agent):
     """
     A blind agent that navigates in an environment and follows Lévy walk like movement patterns.
-
     Movement:
     - agent chooses a random direction
     - agent chooses a step length according to a power law distribution
@@ -189,7 +188,6 @@ class BrownianAgent(Agent):
 
         Args:
             environment (Environment): the environment the agent navigates in
-            _ (None): unused
         """
         self.pending_steps -= 1
         new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
@@ -211,7 +209,6 @@ class BallisticAgent(Agent):
         Calculate the next position and move the agent.
         Args:
             environment (Environment): the environment the agent navigates in
-            _ (None): unused
         """
         new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
         self.move(new_position, environment)
@@ -228,9 +225,11 @@ class RnnAgent(Agent):
 
     def perceive(self, environment):
         """
+        Check whether there is any food particle within the receptive field of the agent.
         Returns:
-            food_direction (float): direction to the closest food particle in radians (ego perspective)
-            food_proximity (bool): 1 if the food particle is within the perception radius, 0 otherwise
+            perception (tuple): sensory information of the agent
+                food_direction (float): direction to the closest food particle in radians (ego perspective)
+                food_proximity (bool): 1 if the food particle is within the perception radius, 0 otherwise
         """
         self.ate = False
         food_position, food_distance, food_index = environment.get_closest_food(self)
@@ -251,7 +250,7 @@ class RnnAgent(Agent):
         perception = (direction_difference, food_proximity)
         return perception
 
-    def choose_action(self, perception): 
+    def choose_action(self, perception):
         """
         Given the position of the closest food particle, agent decides where and how fast to go.
 
@@ -297,7 +296,6 @@ class RnnAgent(Agent):
 
         Args:
             environment (Environment): the environment the agent navigates in
-            direction (float): angle in world perspective (where the agent turns next)
         """
         new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
         self.move(new_position, environment)
@@ -313,6 +311,7 @@ class RnnAgent(Agent):
         self.hidden_state = torch.zeros(1, self.model.hidden_size)
         self.ate = False
 
+# TODO: Under Construction
 class ReservoirAgent(Agent):
     """
     A blind agent that is controlled by a neural reservoir.

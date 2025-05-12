@@ -20,7 +20,9 @@ def visualize(folder):
         data, _, _ = load_epoch_data(folder, epoch)
         animate(environment, params, data, folder_name=folder, file_name=f'animation_{epoch}')
 
-def plot_fitness_log(population_fitness_log, folder):
+def plot_fitness_log(population_fitness_log, folder, params):
+    if params.num_epochs == 1:
+        return
     plt.plot(population_fitness_log)
     plt.xlabel('Epoch')
     plt.ylabel('Mean Fitness')
