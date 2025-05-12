@@ -55,6 +55,9 @@ class EvolutionaryAlgorithm:
         num_parents = int(self.population_size * self.elite_fraction)
         parents = population[:num_parents]
 
+        if self.population_size < 2:
+            raise ValueError("Population size must be at least 2 for evolution.")
+
         # ELITISM
         # copy parents to the next generation, but set small weights to zero
         for parent in parents:
