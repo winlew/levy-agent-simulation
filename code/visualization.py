@@ -9,6 +9,11 @@ import multiprocessing as mp
 from data_io import load_epoch_data, extract_gif_frames
 
 def visualize(folder):
+    """
+    Animate all recorded epochs of a simulation.
+    Args:
+        folder (str): folder where the simulation results are stored
+    """
     _, environment, params = load_epoch_data(folder)
     for i in range(0, params.num_epochs // params.intervall_save + 1):
         epoch = 1 if (i == 0) else i * params.intervall_save
@@ -44,7 +49,7 @@ def animate(environment, params, data, folder_name=None, file_name=None):
                 [(i, environment, params, data, folder_name, file_name, tqdm_positions[i]) for i in range(params.iterations_per_epoch)]
             )
 
-def animate_single_iteration(i, environment, params, data, folder_name, file_name, tqdm_position, save=True, elite_only=False):
+def animate_single_iteration(i, environment, params, data, folder_name, file_name, tqdm_position, save=True):
     iteration_data = data.sel(iteration=i)
 
     color_dict = getColorDict()
@@ -70,7 +75,7 @@ def animate_single_iteration(i, environment, params, data, folder_name, file_nam
         if file_name is None:
             ani.save(filename=data_path / f'animation{i+1}.gif', writer="pillow")
         else: 
-            ani.save(filename=data_path / f'{file_name}.gif', writer="pillow")
+            ani.save(filename=data_path / f'{file_name}_it{i+1}.gif', writer="pillow")
         print(f"Safed animation under:\n{data_path}")
 
 def render_state(ax, data, env, color_dict, params, frame):

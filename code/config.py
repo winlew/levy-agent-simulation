@@ -43,7 +43,7 @@ class Params:
         else:
             self.evolve = False
             if self.num_epochs > 1:
-                raise UserWarning('Evolution is only supported for RnnAgents. Set num_epochs to 1.')
+                raise UserWarning('Evolution is only supported for RnnAgents. Set num_epochs to 1. If you need more repetitions, consider increasing the iterations_per_epoch parameter.')
         
         # one more for the initial positions
         self.simulation_steps = len(np.arange(0, self.total_time, self.delta_t)) + 1

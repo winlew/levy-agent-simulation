@@ -2,8 +2,6 @@ import numpy as np
 from environment import Environment
 from agent import *
 from evolution import EvolutionaryAlgorithm
-import os
-import json
 from data_io import update_epoch_data, initialize_epoch_data, save_simulation_context, save_epoch_data
 import config
 import time
