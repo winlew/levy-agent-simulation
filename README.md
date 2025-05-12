@@ -1,15 +1,11 @@
 # Lévy Agent Simulation
 Simulate foraging behaviour of simple autonomous agents in a 2D environment. \
-Analyse under which circumstances the agents develop Lévy Walk like motion patterns.
+Analyse under which circumstances the agents develop Lévy walk like motion patterns.
 
 <img src="./resources/simulation_example.gif" alt="simulation_example" width="500"/>
 
 ## Set Up
-Create a folder for the project
-
-```mkdir levy-agent-simulation```
-
-Clone the github repository
+Clone the repository
 
 ```git clone git@github.com:winlew/levy-agent-simulation.git```
 
@@ -23,6 +19,7 @@ Install the required packages
 ```pip install -r requirements.txt```
 
 Run a simulation by executing main.py.
+Configure it by modifying parameters.json.
 
 ## Environment
 The environment is the 2D area in which the simulation takes place.
@@ -40,10 +37,10 @@ There are multiple agent types:
 - Lévy agent (follow Lévy walk like motion patterns)
 - Brownian agent (follows brownian motion)
 - RNN agent (behavior is controlled by a hybrid 3 layer neural network)
+- Reservoir agent (controlled by reservoir computing)
 
-## Training
-The Ballistic and the Lévy agent cannot be trained. Their behavior is always the same. \
-For the agents that have a model with modifiable parameters those are trained by an evolutionary algorithm. \
+## Training Through Evolution
+Not all agents can be trained. 
 Each epoch the next generation is assembled from
 - elites
   - best performing fraction of population
@@ -61,7 +58,7 @@ At the end of each epoch the current population is exchanged with the next.
 Simulations are configured by the parameters.json file. Here a detailed explanation of the purpose of each parameter:
 
 Agent 
-- type (class): class of the agent that is used
+- type (class): class of the agent that is used one of {'rnn', 'levy', 'ballistic', 'brownian', 'reservoir'}
 - eat_radius (float): distance at which the agent eats a food particle
 - velocity (float): velocity of the agent 
 - perception_radius (float): perception radius of the agent
@@ -86,6 +83,9 @@ Simulation
 - delta_t (int): time step increment (needed to translate from velocity units to position units)
 - num_epochs (int): number of epochs
 - iterations_per_epoch (int): number of iterations per epoch
+
+Settings
+- intervall_save (int): determines the frequency of saves (< num_epochs)
 
 ### Perspectives
 There are two types of perspectives used in the project
