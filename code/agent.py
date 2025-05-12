@@ -1,6 +1,10 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import igraph as ig
+from tqdm import tqdm
+from matplotlib.animation import FuncAnimation
+import matplotlib.pyplot as plt
 from utils import Point, rectangle_from_points, inside_rectangle, vector_to_angle, calculate_angle_difference, intersect
 
 class Agent:
@@ -311,7 +315,7 @@ class RnnAgent(Agent):
 
 class ReservoirAgent(Agent):
     """
-    A blind agent that is controlled by an Echo State Network (ESN).
+    A blind agent that is controlled by a neural reservoir.
     """
 
     def __init__(self, params, model = None):
@@ -319,7 +323,7 @@ class ReservoirAgent(Agent):
         self.params = params
         if model is None:
             self.model = Reservoir(params.simulation_steps)
-            self.model.run()
+            # self.model.run()
         else:
             self.model = model
         self.time_step = 0
@@ -423,43 +427,165 @@ class Reservoir():
     A neuron is activated if exactly one of its neighbors was active at the previous time step.
     """
 
-    def __init__(self, time_steps, num_neurons=300, connection_probability=0.01, initially_active_ratio=0.01):
+    def __init__(self, time_steps, num_neurons=100, kickstart_fraction=0.01, burn_in_time=100, mean=0, variance=1):
         """
         Args:
+            time_steps (int): number of time steps to simulate
             num_neurons (int): number of neurons in the reservoir
-            connection_probability (float): probability of a connection between two neurons
-            initially_active_ratio (float): ratio of initially active neurons
+            kickstart_fraction (float): fraction of neurons that are activated at the beginning
+            burn_in_time (int): number of time steps to simulate the reservoir activity before the actual simulation starts
+            mean (float): mean of the normal distribution for the weights
+            variance (float): variance of the normal distribution for the weights
         """
         self.time_steps = time_steps
         self.num_neurons = num_neurons
-        self.connection_probability = connection_probability
-        self.initially_active_ratio = initially_active_ratio
-        self.connection_matrix = np.random.random((num_neurons, num_neurons)) < connection_probability
-        self.neuron_state_time_matrix = np.zeros((time_steps, num_neurons), dtype=int)
-        # randomly activate 10% of neurons initially
-        self.neuron_state_time_matrix[0] = (np.random.random(num_neurons) < initially_active_ratio).astype(int)
+        self.kickstart_fraction = kickstart_fraction
+        self.burn_in_time = burn_in_time
+        self.mean = mean
+        self.variance = variance
+        self.weight_matrix = np.random.normal(self.mean, self.variance, (self.num_neurons, self.num_neurons))
+        self.output_weights = np.random.uniform(-1, 1, self.num_neurons)
+        self.burn_in_state_matrix = self.burn_in()
+        self.neuron_state_time_matrix = np.zeros((self.time_steps, self.num_neurons), dtype=float)
+        self.run()
+        self.plot_weights()
+        self.plot_activity()
+        # self.animate('reservoir.gif')
 
-        # weights connecting each neuron to the output node
-        self.weights = np.random.uniform(-1, 1, num_neurons)
+    def burn_in(self):
+        """
+        Simulate the burn in period of the reservoir. Kickstart, then let the reservoir run for burn_in_time steps.
+        """
+        burn_in_state_matrix = np.zeros((self.burn_in_time, self.num_neurons), dtype=float)
+        burn_in_state_matrix[0] = (np.random.random(self.num_neurons) < self.kickstart_fraction).astype(int)
+        for t in range(1, self.burn_in_time):
+            burn_in_state_matrix[t] = 1 / (1 + np.exp(-np.dot(self.weight_matrix, burn_in_state_matrix[t - 1]))) # SIGMOID
+            # burn_in_state_matrix[t] = np.maximum(0, np.dot(self.weight_matrix, burn_in_state_matrix[t - 1])) # RELU
+            # burn_in_state_matrix[t] = np.tanh(np.dot(self.weight_matrix, burn_in_state_matrix[t - 1])) # TANH
+        return burn_in_state_matrix
 
     def run(self):
         """
-        Simulate network activity over time.
+        Simulate network activity over time. Start with the last state of the burn in period and let the reservoir run for time_steps.
         """
+        self.neuron_state_time_matrix[0] = self.burn_in_state_matrix[-1]
         for t in range(1, self.time_steps):
-            # for each neuron, check if any of its connected neighbors were active at t-1
-            for i in range(self.num_neurons):
-                # get all neurons that connect to neuron i
-                neighbors = np.where(self.connection_matrix[:, i])[0]
-                # check if any neighbors were active at previous time step
-                if np.sum(self.neuron_state_time_matrix[t - 1, neighbors] == 1) == 1:
-                    self.neuron_state_time_matrix[t, i] = 1
+            self.neuron_state_time_matrix[t] = 1 / (1 + np.exp(-np.dot(self.weight_matrix, self.neuron_state_time_matrix[t - 1])))
 
     def get_output(self, time_step):
         """
-        Multiply the state of the reservoir at the given time_step with its weight.
-        Apply the sigmoid function to the weighted sum.
+        Returns the output of the reservoir at the given time step.
+        Multiply reservoir state at the given time step with the output weights and apply the sigmoid function.
         """
-        output = np.dot(self.neuron_state_time_matrix[time_step], self.weights)
+        output = np.dot(self.neuron_state_time_matrix[time_step], self.output_weights)
         output = 1 / (1 + np.exp(-output))
         return output
+    
+    # TODO visualization functions should be moved to visualization.py
+
+    def plot_weights(self):
+        """
+        Plot a heatmap of the weight matrix.
+        """
+        _, axes = plt.subplots(1, 1, figsize=(10, 5))
+        axes.imshow(self.weight_matrix, cmap='coolwarm', aspect='auto', interpolation='none')
+        axes.set_ylabel('neuron #')
+        axes.set_xlabel('neuron #')
+        plt.savefig('reservoir_weights.png')
+
+    def plot_activity(self):
+        """
+        Plot the activity of each neuron over time.
+        """
+        _, ax = plt.subplots(figsize=(10, 5))
+        activity = np.concatenate((self.burn_in_state_matrix, self.neuron_state_time_matrix), axis=0)
+        ax.imshow(activity.T, cmap='coolwarm', aspect='auto')
+        ax.set_ylabel('Neuron')
+        ax.set_xlabel('Time')
+        burn_in_end = self.burn_in_state_matrix.shape[0]
+        ax.axvline(x=burn_in_end, color='red', linestyle='--', label='Burn-in End')
+        ax.legend(loc='upper right')
+        plt.savefig('reservoir_activity.png')
+
+    # TODO animate function has to get a rework
+    def animate(self, file_name):
+        """
+        Animate the network activity over time.
+        Args:
+            file_name (str): name of the output GIF file
+            folder (str): folder to save the GIF in
+        """
+        time_steps = self.neuron_state_time_matrix.shape[0]
+
+        g = ig.Graph.Adjacency(np.abs(self.weight_matrix).tolist(), mode='directed')
+        # layout = g.layout(layout='auto')
+        layout = g.layout_fruchterman_reingold()
+
+        # COLOR WEIGHTS AND MAKE STRONGER WEIGHT CONNECTIONS SHORTER
+        # shift to positive, by adding the smallest negative weight, then divide by the range to scale to [0, 1]
+        normalized_weights = (self.weight_matrix - self.weight_matrix.min()) / (self.weight_matrix.max() - self.weight_matrix.min())
+        # Important: For distance-based layouts, SMALLER values should pull nodes CLOSER
+        # So we need to INVERT the weights for edges (higher weight = shorter distance)
+        # We'll use a small epsilon to avoid division by zero for zero weights
+        epsilon = 0.0001
+        edge_distances = []
+        for i, edge in enumerate(g.es):
+            source, target = edge.source, edge.target
+            # Higher normalized weight = shorter distance (closer nodes)
+            # Invert and scale: smaller values will pull nodes closer in the layout
+            edge_distance = 1.0 - normalized_weights[source][target] + epsilon
+            edge_distances.append(edge_distance)
+            # Update edge attributes
+            edge["distance"] = edge_distance
+            edge["width"] = 1 + 5 * normalized_weights[source][target]  # Thicker lines for stronger connections
+            # Set edge color based on weight
+            if normalized_weights[source][target] > 0.66:
+                edge["color"] = "darkred"  # Strongest connections
+            elif normalized_weights[source][target] > 0.33:
+                edge["color"] = "red"      # Medium-strong connections
+            else:
+                edge["color"] = "pink"     # Weaker connections
+
+        # COLORIZE NODES BASED ON STATES
+        min_state = self.neuron_state_time_matrix.min()
+        max_state = self.neuron_state_time_matrix.max()
+        # shift to positive, by adding the smallest negative state, then divide by the range to scale to [0, 1], then scale to 0..2 and shift to -1..1
+        normalized_states = (self.neuron_state_time_matrix - min_state) / (max_state - min_state) * 2 - 1
+
+        fig, ax = plt.subplots(figsize=(10, 8))
+        
+        def update(frame):
+            ax.clear()
+            # shade node colors based on neuron state (values between -1 and 1) RGB: red for positive, blue for negative
+            node_colors = [(1.0 - max(0, state), 1.0 - abs(state), 1.0 - max(0, -state)) for state in normalized_states[frame]]
+            # adjust edge transparency based on normalized weights RGBA: darker for higher absolute weights
+            # edge_colors = [(0, 0, 0, abs(normalized_weights[e.source, e.target])) for e in g.es]
+            ig.plot(
+                g, 
+                target=ax,
+                layout=layout,
+                vertex_color=node_colors,
+                vertex_size=20,
+                vertex_label_size=8,
+                edge_width=0.5,
+                edge_color=[edge["color"] for edge in g.es],
+                edge_arrow_size=0.5,
+                edge_arrow_width=0.2,
+                margin=30
+            )
+            ax.set_title(f"Reservoir at Timestep {frame}/{time_steps}")
+            ax.set_axis_off()
+            return ax
+
+        frames = tqdm(range(time_steps), desc="Rendering animation")
+        ani = FuncAnimation(fig, update, frames=frames, interval=500, blit=False)
+        ani.save(file_name, writer='pillow', fps=10, dpi=100)
+        plt.close()
+
+
+if __name__ == "__main__":
+    reservoir = Reservoir(1000, num_neurons=50, kickstart_fraction=0.5, burn_in_time=200, mean=0, variance=3)
+    reservoir.run()
+    reservoir.animate(reservoir.burn_in_state_matrix, reservoir.weight_matrix, 'reservoir_activity.gif')
+    reservoir.plot_weights()
+    reservoir.plot_activity()

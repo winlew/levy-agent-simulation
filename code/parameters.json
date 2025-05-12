@@ -13,7 +13,7 @@
         "empty": false
     },
     "evolution": {
-        "population_size": 20,
+        "population_size": 1,
         "elite_fraction": 0.4,
         "mutation_fraction": 0.4,
         "mutation_rate": 0.1,
@@ -21,9 +21,9 @@
         "tolerance": 0.1
     },
     "simulation": {
-        "total_time": 149,
+        "total_time": 199,
         "delta_t": 1,
-        "num_epochs": 100,
+        "num_epochs": 1,
         "iterations_per_epoch": 1
     },
     "settings": {
