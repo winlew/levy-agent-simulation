@@ -1,6 +1,6 @@
 import torch
 import glob
-from agent import RnnAgent, Rnn
+from agent import RnnAgent, Rnn, ReservoirAgent
 from config import Params
 import pickle
 import numpy as np
@@ -25,6 +25,9 @@ def save_population(population, folder):
     for i, agent in enumerate(population):
         if (isinstance(agent, RnnAgent)):
             torch.save(agent.model.state_dict(), folder_path / f'agent_{i}.pth')
+        if (isinstance(agent, ReservoirAgent)):
+            with open(folder_path / f'agent_{i}.pkl', 'wb') as f:
+                pickle.dump(agent, f)
 
 def load_population(folder):
     """
@@ -38,12 +41,20 @@ def load_population(folder):
     """
     params = load_parameters(folder)
     population = []
-    path = Path(config.DATA_PATH) / folder    
-    for file in glob.glob(str(path / f'/log/agents_at_epoch_{params.num_epochs}/agent_*.pth')):
-        model = Rnn(params)
-        model.load_state_dict(torch.load(file, weights_only=False))
-        agent = RnnAgent(params, model=model)
-        population.append(agent)
+    path = Path(config.DATA_PATH) / folder
+    if params.agent == ReservoirAgent:
+        for file in glob.glob(str(path) + f'/log/agents_at_epoch_{params.num_epochs}/agent_*.pkl'):
+            with open(file, 'rb') as f:
+                agent = pickle.load(f)
+                population.append(agent)
+    elif params.agent == RnnAgent:
+        for file in glob.glob(str(path) * f'/log/agents_at_epoch_{params.num_epochs}/agent_*.pth'):
+            model = Rnn(params)
+            model.load_state_dict(torch.load(file, weights_only=False))
+            agent = RnnAgent(params, model=model)
+            population.append(agent)
+    else:
+        raise NotImplementedError(f"Loading agents of type {params.agent} is not implemented.")
     return population
 
 def initialize_epoch_data(params):

@@ -6,6 +6,8 @@ from tqdm import tqdm
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 from utils import Point, rectangle_from_points, inside_rectangle, vector_to_angle, calculate_angle_difference, intersect
+from config import DATA_PATH
+from pathlib import Path
 
 class Agent:
     """
@@ -445,8 +447,8 @@ class Reservoir():
         self.burn_in_state_matrix = self.burn_in()
         self.neuron_state_time_matrix = np.zeros((self.time_steps, self.num_neurons), dtype=float)
         self.run()
-        self.plot_weights()
-        self.plot_activity()
+        # self.plot_weights()
+        # self.plot_activity()
         # self.animate('reservoir.gif')
 
     def burn_in(self):
@@ -490,7 +492,7 @@ class Reservoir():
         axes.set_xlabel('neuron #')
         plt.savefig('reservoir_weights.png')
 
-    def plot_activity(self):
+    def plot_activity(self, folder, id):
         """
         Plot the activity of each neuron over time.
         """
@@ -502,7 +504,9 @@ class Reservoir():
         burn_in_end = self.burn_in_state_matrix.shape[0]
         ax.axvline(x=burn_in_end, color='red', linestyle='--', label='Burn-in End')
         ax.legend(loc='upper right')
-        plt.savefig('reservoir_activity.png')
+        path = Path(DATA_PATH) / folder / 'reservoir_activities'
+        path.mkdir(parents=True, exist_ok=True)
+        plt.savefig(path / f'agent_{id}.png')
 
     # TODO animate function has to get a rework
     def animate(self, file_name):

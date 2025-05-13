@@ -1,6 +1,6 @@
 {
     "agent": {
-        "type": "rnn",
+        "type": "reservoir",
         "eat_radius": 0.5,
         "velocity": 1,
         "perception_radius": 3
@@ -13,7 +13,7 @@
         "empty": false
     },
     "evolution": {
-        "population_size": 10,
+        "population_size": 2,
         "elite_fraction": 0.4,
         "mutation_fraction": 0.4,
         "mutation_rate": 0.1,
@@ -23,7 +23,7 @@
     "simulation": {
         "total_time": 49,
         "delta_t": 1,
-        "num_epochs": 10, 
+        "num_epochs": 1, 
         "iterations_per_epoch": 4
     },
     "settings": {

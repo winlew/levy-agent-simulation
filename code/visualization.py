@@ -6,7 +6,8 @@ from pathlib import Path
 from tqdm import tqdm
 import config
 import multiprocessing as mp
-from data_io import load_epoch_data, extract_gif_frames
+from agent import ReservoirAgent
+from data_io import load_epoch_data, load_population, extract_gif_frames
 
 def visualize(folder):
     """
@@ -19,8 +20,13 @@ def visualize(folder):
         epoch = 1 if (i == 0) else i * params.intervall_save
         data, _, _ = load_epoch_data(folder, epoch)
         animate(environment, params, data, folder_name=folder, file_name=f'animation_{epoch}')
+        if params.agent == ReservoirAgent:
+            create_reservoir_activity_plots(folder)
 
 def plot_fitness_log(population_fitness_log, folder, params):
+    """
+    Plot the average fitness of the population over the epochs.
+    """
     if params.num_epochs == 1:
         return
     plt.plot(population_fitness_log)
@@ -29,6 +35,11 @@ def plot_fitness_log(population_fitness_log, folder, params):
     plt.title('Fitness Log of the Population')
     folder_path = config.DATA_PATH / folder / 'fitness_log.png'
     plt.savefig(folder_path)
+
+def create_reservoir_activity_plots(folder):
+    population = load_population(folder)
+    for i, agent in enumerate(population):
+        agent.model.plot_activity(folder, i)
 
 def update(frame, ax, env, params, data, color_dict):
     ax.cla()
