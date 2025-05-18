@@ -40,6 +40,7 @@ def create_reservoir_activity_plots(folder):
     population = load_population(folder)
     for i, agent in enumerate(population):
         agent.model.plot_activity(folder, i)
+        agent.model.plot_eigenvalues_of_weight_matrix(folder, i)
 
 def update(frame, ax, env, params, data, color_dict):
     ax.cla()
@@ -175,7 +176,7 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
 
 def plot_traces(ax, env, params, data, frame, color_dict):
     # plot agent traces
-    number_of_traces = params.simulation_steps
+    number_of_traces = 30 #params.simulation_steps
     i = 1
     velocity = params.velocity
     dt = params.delta_t

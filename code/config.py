@@ -60,6 +60,7 @@ class Params:
             data = json.load(f)
         
         flat_data = {**data['agent'], **data['environment'], 
-                     **data['evolution'], **data['simulation'], **data['settings']}
+                     **data['evolution'], **data['simulation'], 
+                     **data['settings'], **data['reservoir']}
         
         return cls(**flat_data)

@@ -170,7 +170,7 @@ class BrownianAgent(Agent):
         self.perception_radius = params.eat_radius
         # parameters of the normal distribution
         self.mean = 0
-        self.variance = 1
+        self.standard_deviation = 1
         self.pending_steps = 0
 
     def choose_action(self, _):
@@ -179,7 +179,7 @@ class BrownianAgent(Agent):
         """
         if self.pending_steps == 0:
             self.direction = np.random.uniform(0, 2*np.pi)
-            step_length = int(abs(np.random.normal(self.mean, self.variance))) + 1
+            step_length = int(abs(np.random.normal(self.mean, self.standard_deviation))) + 1
             self.pending_steps = step_length
     
     def perform_action(self, environment):
@@ -321,7 +321,7 @@ class ReservoirAgent(Agent):
         super().__init__(params)
         self.params = params
         if model is None:
-            self.model = Reservoir(params.simulation_steps)
+            self.model = Reservoir(params.simulation_steps, params.num_neurons, params.kickstart_probability, params.burn_in_time, params.mean, params.standard_deviation)
             # self.model.run()
         else:
             self.model = model
@@ -426,23 +426,23 @@ class Reservoir():
     A neuron is activated if exactly one of its neighbors was active at the previous time step.
     """
 
-    def __init__(self, time_steps, num_neurons=100, kickstart_fraction=0.01, burn_in_time=100, mean=0, variance=1):
+    def __init__(self, time_steps, num_neurons=100, kickstart_probability=0.1, burn_in_time=200, mean=0, standard_deviation=3):
         """
         Args:
             time_steps (int): number of time steps to simulate
             num_neurons (int): number of neurons in the reservoir
-            kickstart_fraction (float): fraction of neurons that are activated at the beginning
+            kickstart_probability (float): fraction of neurons that are activated at the beginning
             burn_in_time (int): number of time steps to simulate the reservoir activity before the actual simulation starts
             mean (float): mean of the normal distribution for the weights
-            variance (float): variance of the normal distribution for the weights
+            standard_deviation (float): standard_deviation of the normal distribution for the weights
         """
         self.time_steps = time_steps
         self.num_neurons = num_neurons
-        self.kickstart_fraction = kickstart_fraction
+        self.kickstart_probability = kickstart_probability
         self.burn_in_time = burn_in_time
         self.mean = mean
-        self.variance = variance
-        self.weight_matrix = np.random.normal(self.mean, self.variance, (self.num_neurons, self.num_neurons))
+        self.standard_deviation = standard_deviation
+        self.weight_matrix = np.random.normal(self.mean, self.standard_deviation, (self.num_neurons, self.num_neurons))
         self.output_weights = np.random.uniform(-1, 1, self.num_neurons)
         self.burn_in_state_matrix = self.burn_in()
         self.neuron_state_time_matrix = np.zeros((self.time_steps, self.num_neurons), dtype=float)
@@ -456,7 +456,7 @@ class Reservoir():
         Simulate the burn in period of the reservoir. Kickstart, then let the reservoir run for burn_in_time steps.
         """
         burn_in_state_matrix = np.zeros((self.burn_in_time, self.num_neurons), dtype=float)
-        burn_in_state_matrix[0] = (np.random.random(self.num_neurons) < self.kickstart_fraction).astype(int)
+        burn_in_state_matrix[0] = (np.random.random(self.num_neurons) < self.kickstart_probability).astype(int)
         for t in range(1, self.burn_in_time):
             burn_in_state_matrix[t] = 1 / (1 + np.exp(-np.dot(self.weight_matrix, burn_in_state_matrix[t - 1]))) # SIGMOID
             # burn_in_state_matrix[t] = np.maximum(0, np.dot(self.weight_matrix, burn_in_state_matrix[t - 1])) # RELU
@@ -498,13 +498,39 @@ class Reservoir():
         """
         _, ax = plt.subplots(figsize=(10, 5))
         activity = np.concatenate((self.burn_in_state_matrix, self.neuron_state_time_matrix), axis=0)
-        ax.imshow(activity.T, cmap='coolwarm', aspect='auto')
+        im = ax.imshow(activity.T, cmap='plasma', aspect='auto')
+        cbar = plt.colorbar(im, ax=ax)
+        cbar.set_label('State', labelpad=10)
         ax.set_ylabel('Neuron')
         ax.set_xlabel('Time')
         burn_in_end = self.burn_in_state_matrix.shape[0]
-        ax.axvline(x=burn_in_end, color='red', linestyle='--', label='Burn-in End')
-        ax.legend(loc='upper right')
+        ax.axvline(burn_in_end, color='black', linestyle='-', linewidth=1.5, label='Burn In End')
+        plt.legend(loc='upper right', framealpha=1)
+        # ax.text(burn_in_end - 7, self.neuron_state_time_matrix.shape[1]+5, 'burn in', rotation=45, color='black', fontsize=8, va='center', ha='left')
         path = Path(DATA_PATH) / folder / 'reservoir_activities'
+        path.mkdir(parents=True, exist_ok=True)
+        plt.savefig(path / f'agent_{id}.png')
+
+    def plot_eigenvalues_of_weight_matrix(self, folder, id):
+        """
+        Plot the eigenvalues of the weight matrix in the complex plane.
+        """
+        eigenvalues, _ = np.linalg.eig(self.weight_matrix)
+        spectral_radius = max(abs(eigenvalues))
+        plt.figure(figsize=(8, 12))
+        plt.scatter(eigenvalues.real, eigenvalues.imag, s=10)
+        plt.xlabel(r'$\mathrm{Re}(\lambda)$')
+        plt.ylabel(r'$\mathrm{Im}(\lambda)$')
+        plt.title(f'Eigenvalues of the Connectivity Matrix (Spectral Radius: {spectral_radius:.2f})')
+        plt.axhline(0, color='black', lw=0.2, ls='--')
+        plt.axvline(0, color='black', lw=0.2, ls='--')
+        circle = plt.Circle((0, 0), spectral_radius, color='grey', fill=False, lw=1)
+        plt.gca().add_artist(circle)
+        plt.grid(linewidth=0.3)
+        plt.xlim(-1.5 * spectral_radius, 1.5 * spectral_radius)
+        plt.ylim(-1.5 * spectral_radius, 1.5 * spectral_radius)
+        plt.gca().set_aspect('equal', adjustable='box')
+        path = Path(DATA_PATH) / folder / 'eigenvalues'
         path.mkdir(parents=True, exist_ok=True)
         plt.savefig(path / f'agent_{id}.png')
 
@@ -583,10 +609,9 @@ class Reservoir():
         ani.save(file_name, writer='pillow', fps=10, dpi=100)
         plt.close()
 
-
 if __name__ == "__main__":
-    reservoir = Reservoir(1000, num_neurons=50, kickstart_fraction=0.5, burn_in_time=200, mean=0, variance=3)
-    reservoir.run()
-    reservoir.animate(reservoir.burn_in_state_matrix, reservoir.weight_matrix, 'reservoir_activity.gif')
-    reservoir.plot_weights()
-    reservoir.plot_activity()
+    reservoir = Reservoir(100, num_neurons=100, kickstart_probability=0.1, burn_in_time=50, mean=0, standard_deviation=3) # var=0.13
+    # reservoir.run()
+    # reservoir.animate(reservoir.burn_in_state_matrix, reservoir.weight_matrix, 'reservoir_activity.gif')
+    # reservoir.plot_weights()
+    reservoir.plot_activity('delete_me', 0)    
