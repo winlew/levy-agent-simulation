@@ -11,6 +11,7 @@ import json
 from PIL import Image
 import os
 import shutil
+import imageio
 
 def save_population(population, folder):
     """
@@ -171,6 +172,29 @@ def extract_gif_frames(folder, file_name):
     for i in range(gif.n_frames):
         gif.seek(i)
         gif.save(os.path.join(output_folder, f"frame_{i}.png"))
+
+def combine_gifs_side_by_side(path1, path2, output_path):
+    """
+    Place gifs side by side
+
+    Args:
+        path1 (str): path to the first gif
+        path2 (str): path to the second gif
+        output_path (str): path to save the combined gif
+    """
+    gif1 = imageio.get_reader(path1)
+    gif2 = imageio.get_reader(path2)
+    number_of_frames = min(gif1.get_length(), gif2.get_length())
+    new_gif = imageio.get_writer('output.gif')
+    for frame_number in range(number_of_frames):
+        img1 = gif1.get_data(frame_number)
+        img2 = gif2.get_data(frame_number)
+        new_image = np.hstack((img1, img2))
+        new_gif.append_data(new_image)
+    gif1.close()
+    gif2.close()
+    new_gif.close()
+    shutil.move('output.gif', output_path)
 
 if __name__ == '__main__':
     extract_gif_frames('exploration_study', 'levy.gif')
