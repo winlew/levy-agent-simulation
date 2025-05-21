@@ -458,9 +458,9 @@ class Reservoir():
         burn_in_state_matrix = np.zeros((self.burn_in_time, self.num_neurons), dtype=float)
         burn_in_state_matrix[0] = (np.random.random(self.num_neurons) < self.kickstart_probability).astype(int)
         for t in range(1, self.burn_in_time):
-            burn_in_state_matrix[t] = 1 / (1 + np.exp(-np.dot(self.weight_matrix, burn_in_state_matrix[t - 1]))) # SIGMOID
+            # burn_in_state_matrix[t] = 1 / (1 + np.exp(-np.dot(self.weight_matrix, burn_in_state_matrix[t - 1]))) # SIGMOID
             # burn_in_state_matrix[t] = np.maximum(0, np.dot(self.weight_matrix, burn_in_state_matrix[t - 1])) # RELU
-            # burn_in_state_matrix[t] = np.tanh(np.dot(self.weight_matrix, burn_in_state_matrix[t - 1])) # TANH
+            burn_in_state_matrix[t] = np.tanh(np.dot(self.weight_matrix, burn_in_state_matrix[t - 1])) # TANH
         return burn_in_state_matrix
 
     def run(self):
@@ -469,7 +469,8 @@ class Reservoir():
         """
         self.neuron_state_time_matrix[0] = self.burn_in_state_matrix[-1]
         for t in range(1, self.time_steps):
-            self.neuron_state_time_matrix[t] = 1 / (1 + np.exp(-np.dot(self.weight_matrix, self.neuron_state_time_matrix[t - 1])))
+            # self.neuron_state_time_matrix[t] = 1 / (1 + np.exp(-np.dot(self.weight_matrix, self.neuron_state_time_matrix[t - 1]))) # SIGMOID
+            self.neuron_state_time_matrix[t] = np.tanh(np.dot(self.weight_matrix, self.neuron_state_time_matrix[t - 1])) # TANH
 
     def get_output(self, time_step):
         """
@@ -500,7 +501,7 @@ class Reservoir():
         activity = np.concatenate((self.burn_in_state_matrix, self.neuron_state_time_matrix), axis=0)
         im = ax.imshow(activity.T, cmap='plasma', aspect='auto')
         cbar = plt.colorbar(im, ax=ax)
-        cbar.set_label('State', labelpad=10)
+        cbar.set_label('Activity', labelpad=10)
         ax.set_ylabel('Neuron')
         ax.set_xlabel('Time')
         burn_in_end = self.burn_in_state_matrix.shape[0]
@@ -610,8 +611,11 @@ class Reservoir():
         plt.close()
 
 if __name__ == "__main__":
-    reservoir = Reservoir(100, num_neurons=100, kickstart_probability=0.1, burn_in_time=50, mean=0, standard_deviation=3) # var=0.13
-    # reservoir.run()
-    # reservoir.animate(reservoir.burn_in_state_matrix, reservoir.weight_matrix, 'reservoir_activity.gif')
-    # reservoir.plot_weights()
-    reservoir.plot_activity('delete_me', 0)    
+
+    for activity in np.arange(0, 0.5, 0.05):
+        reservoir = Reservoir(100, num_neurons=100, kickstart_probability=0.02, burn_in_time=50, mean=0, standard_deviation=activity) # var=0.13
+        # reservoir.run()
+        # reservoir.animate(reservoir.burn_in_state_matrix, reservoir.weight_matrix, 'reservoir_activity.gif')
+        # reservoir.plot_weights()
+        rounded_activity = round(activity, 2)
+        reservoir.plot_activity('delete_me', rounded_activity)

@@ -120,10 +120,13 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
     # create 50 points along circles circumference
     theta = np.linspace(0, 2*np.pi, 50)
 
-    for row in data_matrix:
+    for i,row in enumerate(data_matrix):
         x = row[0]
         y = row[1]
         r = row[2]
+
+        # plot the number of the agent inside the circle
+        ax.text(x, y, str(i), fontsize=8, ha='center', va='center')
 
         # if there are even 4 rows
         if len(row) == 4 and row[3] != 0:
