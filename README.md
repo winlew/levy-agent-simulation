@@ -69,6 +69,7 @@ Environment
 - border_buffer (float): minimum distance between food particles and the border of the environment
 - food_buffer (float): minimum distance between food particles choose as perception_radius + eat_radius so that agents cannot 'see' next food item from current one 
 - empty (bool): if true, no food particles are spawned into the environment
+- rigid_boundary (bool): if true, then there are walls around the edges of the environment that the agents cannot cross
 
 Evolution
 - population_size (int): number of agents in the population

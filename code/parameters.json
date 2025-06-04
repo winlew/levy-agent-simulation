@@ -6,14 +6,15 @@
         "perception_radius": 3
     },
     "environment": {
-        "num_food": 10,
-        "size": 50,
+        "num_food": 100,
+        "size": 500,
         "border_buffer": 5,
         "food_buffer": 5,
-        "empty": false
+        "empty": false,
+        "rigid_boundary": true
     },
     "evolution": {
-        "population_size": 10,
+        "population_size": 100,
         "elite_fraction": 0.4,
         "mutation_fraction": 0.4,
         "mutation_rate": 0.1,
@@ -21,19 +22,18 @@
         "tolerance": 0.1
     },
     "simulation": {
-        "total_time": 149, 
+        "total_time": 499,
         "delta_t": 1,
-        "num_epochs": 1, 
-        "iterations_per_epoch": 4
+        "num_epochs": 1,
+        "iterations_per_epoch": 5
     },
     "settings": {
         "intervall_save": 5
     },
     "reservoir": {
-        "num_neurons": 100,
-        "kickstart_probability": 0.1,
-        "burn_in_time": 50,
+        "num_neurons": 1000,
+        "burn_in_time": 100,
         "mean": 0,
-        "standard_deviation": 1
+        "standard_deviation": 0.04
     }
 }

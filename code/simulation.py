@@ -51,6 +51,13 @@ class Simulation:
             population (list): list of agents
         """
         environment = Environment(self.params)
+
+        if self.params.rigid_boundary:
+            environment.add_wall(np.array([0, 0]), np.array([0, self.params.size]))
+            environment.add_wall(np.array([0, 0]), np.array([self.params.size, 0]))
+            environment.add_wall(np.array([self.params.size, 0]), np.array([self.params.size, self.params.size]))
+            environment.add_wall(np.array([0, self.params.size]), np.array([self.params.size, self.params.size]))
+
         population = self.set_up_population(population)
 
         print('Starting simulation...')
