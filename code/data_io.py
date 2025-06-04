@@ -114,7 +114,7 @@ def save_simulation_context(folder, environment, params):
     folder_path.mkdir(parents=True, exist_ok=True)
     with open(folder_path / 'environment.pkl', 'wb') as f:
         pickle.dump(environment, f)
-    shutil.copyfile('code/parameters.json', folder_path / 'parameters.json')
+    shutil.copyfile(config.PROJECT_ROOT_PATH / 'code/parameters.json', folder_path / 'parameters.json')
 
 def save_epoch_data(folder, data, population, epoch):
     """
