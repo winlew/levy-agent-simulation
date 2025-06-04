@@ -321,7 +321,7 @@ class ReservoirAgent(Agent):
         super().__init__(params)
         self.params = params
         if model is None:
-            self.model = Reservoir(params.simulation_steps, params.num_neurons, params.kickstart_probability, params.burn_in_time, params.mean, params.standard_deviation)
+            self.model = Reservoir(params.simulation_steps, params.num_neurons, params.burn_in_time, params.mean, params.standard_deviation)
             # self.model.run()
         else:
             self.model = model
@@ -426,19 +426,17 @@ class Reservoir():
     A neuron is activated if exactly one of its neighbors was active at the previous time step.
     """
 
-    def __init__(self, time_steps, num_neurons=100, kickstart_probability=0.1, burn_in_time=200, mean=0, standard_deviation=3):
+    def __init__(self, time_steps, num_neurons=100, burn_in_time=200, mean=0, standard_deviation=3):
         """
         Args:
             time_steps (int): number of time steps to simulate
             num_neurons (int): number of neurons in the reservoir
-            kickstart_probability (float): fraction of neurons that are activated at the beginning
             burn_in_time (int): number of time steps to simulate the reservoir activity before the actual simulation starts
             mean (float): mean of the normal distribution for the weights
             standard_deviation (float): standard_deviation of the normal distribution for the weights
         """
         self.time_steps = time_steps
         self.num_neurons = num_neurons
-        self.kickstart_probability = kickstart_probability
         self.burn_in_time = burn_in_time
         self.mean = mean
         self.standard_deviation = standard_deviation
@@ -456,7 +454,8 @@ class Reservoir():
         Simulate the burn in period of the reservoir. Kickstart, then let the reservoir run for burn_in_time steps.
         """
         burn_in_state_matrix = np.zeros((self.burn_in_time, self.num_neurons), dtype=float)
-        burn_in_state_matrix[0] = (np.random.random(self.num_neurons) < self.kickstart_probability).astype(int)
+        # initialize neuron states from distribution
+        burn_in_state_matrix[0] = np.random.normal(self.mean, self.standard_deviation, self.num_neurons)
         for t in range(1, self.burn_in_time):
             # burn_in_state_matrix[t] = 1 / (1 + np.exp(-np.dot(self.weight_matrix, burn_in_state_matrix[t - 1]))) # SIGMOID
             # burn_in_state_matrix[t] = np.maximum(0, np.dot(self.weight_matrix, burn_in_state_matrix[t - 1])) # RELU
@@ -478,7 +477,8 @@ class Reservoir():
         Multiply reservoir state at the given time step with the output weights and apply the sigmoid function.
         """
         output = np.dot(self.neuron_state_time_matrix[time_step], self.output_weights)
-        output = 1 / (1 + np.exp(-output))
+        # output = 1 / (1 + np.exp(-output))
+        output = np.tanh(output)
         return output
     
     # TODO visualization functions should be moved to visualization.py
@@ -511,6 +511,7 @@ class Reservoir():
         path = Path(DATA_PATH) / folder / 'reservoir_activities'
         path.mkdir(parents=True, exist_ok=True)
         plt.savefig(path / f'agent_{id}.png')
+        plt.close()
 
     def plot_eigenvalues_of_weight_matrix(self, folder, id):
         """
@@ -534,6 +535,7 @@ class Reservoir():
         path = Path(DATA_PATH) / folder / 'eigenvalues'
         path.mkdir(parents=True, exist_ok=True)
         plt.savefig(path / f'agent_{id}.png')
+        plt.close()
 
     # TODO animate function has to get a rework
     def animate(self, file_name):
@@ -612,10 +614,8 @@ class Reservoir():
 
 if __name__ == "__main__":
 
-    for activity in np.arange(0, 0.5, 0.05):
-        reservoir = Reservoir(100, num_neurons=100, kickstart_probability=0.02, burn_in_time=50, mean=0, standard_deviation=activity) # var=0.13
-        # reservoir.run()
-        # reservoir.animate(reservoir.burn_in_state_matrix, reservoir.weight_matrix, 'reservoir_activity.gif')
-        # reservoir.plot_weights()
-        rounded_activity = round(activity, 2)
-        reservoir.plot_activity('delete_me', rounded_activity)
+    for activity in np.arange(0.03, 0.05, 0.005):
+        print(activity)
+        reservoir = Reservoir(499, num_neurons=1000, burn_in_time=100, mean=0, standard_deviation=activity)
+        rounded_activity = round(activity, 5)
+        reservoir.plot_activity('activities', rounded_activity)
