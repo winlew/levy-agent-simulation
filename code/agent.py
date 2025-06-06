@@ -68,7 +68,7 @@ class Agent:
         Args:
             environment (Environment): the environment the agent navigates in
         """
-        # do not check path on first step
+        # do not check path on first step of every iteration
         if self.last_position is None:
             return
         # do not check_path if boundary got crossed 
@@ -118,6 +118,7 @@ class Agent:
         self.position = np.array(np.random.uniform(0, self.params.size, 2))
         self.direction = np.random.uniform(0, 2*np.pi)
         self.ate = False
+        self.last_position = None
 
 
 class LévyAgent(Agent):
@@ -309,7 +310,7 @@ class RnnAgent(Agent):
         self.move(new_position, environment)
 
     def reset(self):
-        super.reset()
+        super().reset()
         self.hidden_state = torch.zeros(1, self.model.hidden_size)
 
 # TODO: Under Construction
@@ -348,7 +349,7 @@ class ReservoirAgent(Agent):
         self.move(new_position, environment)
 
     def reset(self):
-        super.reset()
+        super().reset()
         self.time_step = 0
 
 class Rnn(nn.Module):
