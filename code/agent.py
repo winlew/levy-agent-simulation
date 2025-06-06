@@ -339,7 +339,7 @@ class ReservoirAgent(Agent):
         Scale the direction with the output of the neural reservoir.
         """
         output = self.model.get_output(self.time_step)
-        angle = output * 2 * np.pi
+        angle = output * np.pi
         direction = (self.direction + angle) % (2 * np.pi)
         self.direction = direction
         self.time_step += 1
@@ -469,6 +469,7 @@ class Reservoir():
         """
         Returns the output of the reservoir at the given time step.
         Multiplies reservoir state at the given time step with the output weights and applies tanh.
+        -1 < output < 1
         """
         output = np.dot(self.neuron_state_time_matrix[time_step], self.output_weights)
         output = np.tanh(output)
