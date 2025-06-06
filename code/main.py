@@ -12,11 +12,11 @@ def main():
 
     # execute simulation
     sim = Simulation(params, params.agent)
-    mean_fitness_per_epoch = sim.run(folder)
+    fitnesses = sim.run(folder)
     
     # visualize results
     visualize(folder)
-    plot_fitness_log(mean_fitness_per_epoch, folder, params)
+    plot_fitness_log(fitnesses, folder, params)
 
 if __name__ == '__main__':
     main()
