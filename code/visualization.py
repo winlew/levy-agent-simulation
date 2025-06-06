@@ -35,7 +35,7 @@ def plot_fitness_log(population_fitness_log, folder, params):
         plt.title('Fitness of the Population')
         plt.savefig(config.DATA_PATH / folder / 'fitness_log.png')
         return
-    plt.plot(np.sum(population_fitness_log, axis=(1,2)))
+    plt.plot(np.sum(population_fitness_log, axis=(0,1)))
     plt.xlabel('Epoch')
     plt.ylabel('Cumulative Fitness')
     plt.title('Fitness Log of the Population')
