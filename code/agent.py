@@ -439,21 +439,16 @@ class Reservoir():
         self.burn_in_state_matrix = self.burn_in()
         self.neuron_state_time_matrix = np.zeros((self.time_steps, self.num_neurons), dtype=float)
         self.run()
-        # self.plot_weights()
-        # self.plot_activity()
-        # self.animate('reservoir.gif')
 
     def burn_in(self):
         """
-        Simulate the burn in period of the reservoir. Kickstart, then let the reservoir run for burn_in_time steps.
+        Kickstart, then let the reservoir run for burn_in_time steps.
         """
         burn_in_state_matrix = np.zeros((self.burn_in_time, self.num_neurons), dtype=float)
         # initialize neuron states from distribution
         burn_in_state_matrix[0] = np.random.normal(self.mean, self.standard_deviation, self.num_neurons)
         for t in range(1, self.burn_in_time):
-            # burn_in_state_matrix[t] = 1 / (1 + np.exp(-np.dot(self.weight_matrix, burn_in_state_matrix[t - 1]))) # SIGMOID
-            # burn_in_state_matrix[t] = np.maximum(0, np.dot(self.weight_matrix, burn_in_state_matrix[t - 1])) # RELU
-            burn_in_state_matrix[t] = np.tanh(np.dot(self.weight_matrix, burn_in_state_matrix[t - 1])) # TANH
+            burn_in_state_matrix[t] = np.tanh(np.dot(self.weight_matrix, burn_in_state_matrix[t - 1]))
         return burn_in_state_matrix
 
     def run(self):
@@ -462,16 +457,14 @@ class Reservoir():
         """
         self.neuron_state_time_matrix[0] = self.burn_in_state_matrix[-1]
         for t in range(1, self.time_steps):
-            # self.neuron_state_time_matrix[t] = 1 / (1 + np.exp(-np.dot(self.weight_matrix, self.neuron_state_time_matrix[t - 1]))) # SIGMOID
-            self.neuron_state_time_matrix[t] = np.tanh(np.dot(self.weight_matrix, self.neuron_state_time_matrix[t - 1])) # TANH
+            self.neuron_state_time_matrix[t] = np.tanh(np.dot(self.weight_matrix, self.neuron_state_time_matrix[t - 1]))
 
     def get_output(self, time_step):
         """
         Returns the output of the reservoir at the given time step.
-        Multiply reservoir state at the given time step with the output weights and apply the sigmoid function.
+        Multiplies reservoir state at the given time step with the output weights and applies tanh.
         """
         output = np.dot(self.neuron_state_time_matrix[time_step], self.output_weights)
-        # output = 1 / (1 + np.exp(-output))
         output = np.tanh(output)
         return output
     
