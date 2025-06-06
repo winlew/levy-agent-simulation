@@ -28,10 +28,16 @@ def plot_fitness_log(population_fitness_log, folder, params):
     Plot the average fitness of the population over the epochs.
     """
     if params.num_epochs == 1:
+        plt.imshow(population_fitness_log, cmap='hot', interpolation='nearest')
+        plt.colorbar()
+        plt.xlabel('Agent Index')
+        plt.ylabel('Iteration')
+        plt.title('Fitness of the Population')
+        plt.savefig(config.DATA_PATH / folder / 'fitness_log.png')
         return
-    plt.plot(population_fitness_log)
+    plt.plot(np.sum(population_fitness_log, axis=(1,2)))
     plt.xlabel('Epoch')
-    plt.ylabel('Mean Fitness')
+    plt.ylabel('Cumulative Fitness')
     plt.title('Fitness Log of the Population')
     folder_path = config.DATA_PATH / folder / 'fitness_log.png'
     plt.savefig(folder_path)

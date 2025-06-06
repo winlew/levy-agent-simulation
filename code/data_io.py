@@ -195,7 +195,3 @@ def combine_gifs_side_by_side(path1, path2, output_path):
     gif2.close()
     new_gif.close()
     shutil.move('output.gif', output_path)
-
-if __name__ == '__main__':
-    extract_gif_frames('tanh-0.050', 'animation_1_it3.gif')
-    pass

@@ -58,12 +58,10 @@ class Simulation:
 
         population = self.set_up_population(population)
 
-        print('Starting simulation...')
         for epoch in range(1, self.num_epochs + 1):
             population = self.run_epoch(population, environment)
             if epoch % self.params.intervall_save == 0 or epoch == 1:
                 save_epoch_data(folder, self.data, population, epoch)
-        print('Saving simulation...')
         save_simulation_context(folder, environment, self.params)
         save_epoch_data(folder, self.data, population, self.params.num_epochs)
         return self.fitnesses
@@ -119,8 +117,8 @@ class Simulation:
         for _ in tqdm(range(self.iterations_per_epoch)):
             self.run_iteration(population, environment)
             self.iteration += 1
-        # sum up consumed food particles over all iterations and time steps for every agent
-        self.fitnesses = np.asarray(np.sum(self.data['ate'], axis=(0,1)))
+        # sum up consumed food particles over all time steps for every agent
+        self.fitnesses = np.asarray(np.sum(self.data['ate'], axis=1))
         descendants = self.evolve(population) if self.params.evolve else population
         return descendants
     
@@ -180,7 +178,7 @@ class Simulation:
         """
         evolutionary_algorithm = EvolutionaryAlgorithm(self.params)
         # sort population after performance in descending order
-        sorted_indices = np.argsort(self.fitnesses)[::-1]
+        sorted_indices = np.argsort(np.sum(self.fitnesses, axis=0))[::-1]
         sorted_population = [population[i] for i in sorted_indices]
         descendants = evolutionary_algorithm.evolve(sorted_population, self.params.agent) 
         return descendants
@@ -213,4 +211,6 @@ def record_time(func):
     return wrapper
 
 if __name__ == '__main__':
-    print('')
+    from data_io import extract_gif_frames
+    extract_gif_frames('d', 'animation_1_it2.gif')
+    pass
