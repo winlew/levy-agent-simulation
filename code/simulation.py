@@ -25,15 +25,13 @@ class Simulation:
         self.num_epochs = params.num_epochs
         self.iterations_per_epoch = params.iterations_per_epoch
         self.population_size = params.population_size
-        
         self.iteration = 0
-        # used to store
+        # trajectory_log is used to store
         # - position
         # - direction
         # - whether agent consumed food
-        # for every time step in a single iteration
+        # for every agent at every time step in a single iteration
         self.trajectory_log = np.zeros((self.params.simulation_steps, self.population_size, config.NUM_MOTION_ATTRIBUTES))
-        self.mean_fitness_per_epoch = []
         self.data = initialize_epoch_data(self.params)
 
     def run(self, folder, population=None):
@@ -41,10 +39,10 @@ class Simulation:
         Run a simulation.
 
         Each epoch:
-        - evaluates the performance of each agent iterations_per_epoch times where
+        - evaluate the performance of each agent iterations_per_epoch times where
           Each iteration:
           - simulates the agents behaviors for simulation_steps time steps
-        - evolves the population
+        - evolve the population
 
         Args:
             folder (str): store the simulation results here
@@ -61,14 +59,14 @@ class Simulation:
         population = self.set_up_population(population)
 
         print('Starting simulation...')
-        for epoch in tqdm(range(1, self.num_epochs + 1)):
+        for epoch in range(1, self.num_epochs + 1):
             population = self.run_epoch(population, environment)
             if epoch % self.params.intervall_save == 0 or epoch == 1:
                 save_epoch_data(folder, self.data, population, epoch)
         print('Saving simulation...')
         save_simulation_context(folder, environment, self.params)
         save_epoch_data(folder, self.data, population, self.params.num_epochs)
-        return self.mean_fitness_per_epoch
+        return self.fitnesses
 
     def set_up_population(self, population):
         """
@@ -118,12 +116,11 @@ class Simulation:
             descendants (list): list of agents, the next generation
         """
         self.iteration = 0
-        for _ in range(self.iterations_per_epoch):
+        for _ in tqdm(range(self.iterations_per_epoch)):
             self.run_iteration(population, environment)
             self.iteration += 1
-        # sum up consumed food particles over all iterations and time steps
+        # sum up consumed food particles over all iterations and time steps for every agent
         self.fitnesses = np.asarray(np.sum(self.data['ate'], axis=(0,1)))
-        self.mean_fitness_per_epoch.append(np.mean(self.fitnesses))
         descendants = self.evolve(population) if self.params.evolve else population
         return descendants
     
