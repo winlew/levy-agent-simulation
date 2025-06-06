@@ -6,15 +6,15 @@
         "perception_radius": 3
     },
     "environment": {
-        "num_food": 100,
-        "size": 500,
+        "num_food": 20,
+        "size": 100,
         "border_buffer": 5,
         "food_buffer": 5,
         "empty": false,
         "rigid_boundary": true
     },
     "evolution": {
-        "population_size": 100,
+        "population_size": 50,
         "elite_fraction": 0.4,
         "mutation_fraction": 0.4,
         "mutation_rate": 0.1,
@@ -22,10 +22,10 @@
         "tolerance": 0.1
     },
     "simulation": {
-        "total_time": 499,
+        "total_time": 699,
         "delta_t": 1,
         "num_epochs": 1,
-        "iterations_per_epoch": 5
+        "iterations_per_epoch": 5 
     },
     "settings": {
         "intervall_save": 5
