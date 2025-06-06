@@ -41,6 +41,7 @@ class Agent:
         self.meals = 0
         # whether the agent ate at the previous time step
         self.ate = False
+        self.sensed_wall = False
     
     def perceive(self, environment):
         """
@@ -93,7 +94,8 @@ class Agent:
         """
         for wall in environment.walls:
             if intersect(self.position, new_position, wall[0], wall[1]):
-                self.direction = np.random.uniform(0, 2*np.pi)
+                # self.direction = np.random.uniform(0, 2*np.pi)
+                self.sensed_wall = True
                 return
         new_position = np.mod(new_position, environment.size)
         self.last_position = self.position
@@ -120,6 +122,7 @@ class Agent:
         self.direction = np.random.uniform(0, 2*np.pi)
         self.ate = False
         self.last_position = None
+        self.sensed_wall = False
 
 
 class LévyAgent(Agent):
@@ -143,7 +146,8 @@ class LévyAgent(Agent):
         """
         Agent chooses a random direction and a step length according to a power law distribution.
         """
-        if self.pending_steps == 0:
+        if self.pending_steps == 0 or self.sensed_wall:
+            self.sensed_wall = False
             self.direction = np.random.uniform(0, 2*np.pi)
             x = np.random.uniform(0, 1)
             step_length = int(1 / x**(1/self.mu))
@@ -183,7 +187,8 @@ class BrownianAgent(Agent):
         """
         Agent chooses a random direction and a step length according to a normal distribution.
         """
-        if self.pending_steps == 0:
+        if self.pending_steps == 0 or self.sensed_wall:
+            self.sensed_wall = False
             self.direction = np.random.uniform(0, 2*np.pi)
             step_length = int(abs(np.random.normal(self.mean, self.standard_deviation))) + 1
             self.pending_steps = step_length
