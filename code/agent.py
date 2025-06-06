@@ -159,6 +159,10 @@ class LévyAgent(Agent):
         new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
         self.move(new_position, environment)
 
+    def reset(self):
+        super().reset()
+        self.pending_steps = 0
+
 class BrownianAgent(Agent):
     """
     A blind agent that follows Brownian motion.
@@ -192,6 +196,10 @@ class BrownianAgent(Agent):
         self.pending_steps -= 1
         new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
         self.move(new_position, environment)
+
+    def reset(self):
+        super().reset()
+        self.pending_steps = 0
 
 class BallisticAgent(Agent):
     """
@@ -301,15 +309,8 @@ class RnnAgent(Agent):
         self.move(new_position, environment)
 
     def reset(self):
-        """
-        Reset the agent to its initial state.
-        """
-        self.food_mask = np.zeros(self.params.num_food, dtype=bool)
-        self.meals = 0
-        self.position = np.array(np.random.uniform(0, self.params.size, 2))
-        self.direction = np.random.uniform(0, 2*np.pi)
+        super.reset()
         self.hidden_state = torch.zeros(1, self.model.hidden_size)
-        self.ate = False
 
 # TODO: Under Construction
 class ReservoirAgent(Agent):
@@ -322,7 +323,6 @@ class ReservoirAgent(Agent):
         self.params = params
         if model is None:
             self.model = Reservoir(params.simulation_steps, params.num_neurons, params.burn_in_time, params.mean, params.standard_deviation)
-            # self.model.run()
         else:
             self.model = model
         self.time_step = 0
@@ -348,15 +348,8 @@ class ReservoirAgent(Agent):
         self.move(new_position, environment)
 
     def reset(self):
-        """
-        Reset the agent to its initial state.
-        """
-        self.food_mask = np.zeros(self.params.num_food, dtype=bool)
-        self.meals = 0
-        self.position = np.array(np.random.uniform(0, self.params.size, 2))
-        self.direction = np.random.uniform(0, 2*np.pi)
+        super.reset()
         self.time_step = 0
-        self.ate = False
 
 class Rnn(nn.Module):
     """
