@@ -31,6 +31,7 @@ def plot_fitness_log(population_fitness_log, folder, params):
     """
     Plot the average fitness of the population over the epochs.
     """
+    plt.clf()
     if params.num_epochs == 1:
         plt.imshow(population_fitness_log, cmap='hot', interpolation='nearest')
         plt.colorbar()
@@ -367,5 +368,19 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.02):
     path.mkdir(parents=True, exist_ok=True)
     plt.savefig(path / 'step_length_distribution.png')
 
+    # and create a log-binned plot
+    plt.clf()
+    log_bins = np.logspace(np.log10(1), np.log10(50), 15)
+    log_counts, _ = np.histogram(step_lengths, bins=log_bins)
+    plt.figure(figsize=(10, 6))
+    plt.plot(log_bins[:14], log_counts, '.', color='blue')
+    plt.xscale('log')
+    plt.title(f'Log-Binned Step Length Distribution')
+    plt.xlabel('Step Length (log scale)')
+    plt.ylabel('Frequency')
+    plt.xticks(log_bins, rotation=45)
+    plt.tight_layout()
+    plt.savefig(path / 'log_binned_step_length_distribution.png')
+
 if __name__ == '__main__':
-    plot_step_length_distribution_of_agents('del')
+    plot_step_length_distribution_of_agents('reservoir_agents')
