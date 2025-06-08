@@ -6,8 +6,9 @@ from pathlib import Path
 from tqdm import tqdm
 import config
 import multiprocessing as mp
-from agent import ReservoirAgent
+from agent import ReservoirAgent, LévyAgent
 from data_io import load_epoch_data, load_population, extract_gif_frames
+from config import DATA_PATH
 
 def visualize(folder):
     """
@@ -22,6 +23,9 @@ def visualize(folder):
         animate(environment, params, data, folder_name=folder, file_name=f'animation_{epoch}')
         if params.agent == ReservoirAgent:
             create_reservoir_activity_plots(folder)
+            plot_step_length_distribution_of_agents(folder)
+        if params.agent == LévyAgent:
+            plot_step_length_distribution_of_agents(folder)
 
 def plot_fitness_log(population_fitness_log, folder, params):
     """
@@ -320,3 +324,42 @@ def visualize_state(environment, agents):
         plot_lines(environment,direction_matrix, alpha=1, color=color_dict["agent_color"], linewidth=1, ax=ax)
     # plt.show()
     return ax
+
+def plot_step_length_distribution_of_agents(folder, tolerance=0.02):
+    """
+    Make a distribution that shows how each step length of all agents is.
+    The step length describes how long an agent moved without turning.
+    """
+    _, _, params = load_epoch_data(folder)
+    population = load_population(folder)
+
+    if params.agent == LévyAgent:
+        step_lengths = np.array([])
+        for agent in population:
+            step_lengths = np.concatenate((step_lengths, agent.step_length_log))
+    elif params.agent == ReservoirAgent:
+        step_lengths = np.array([])
+        for agent in population:
+            step_counter = 0
+            for output in agent.output_log:
+                if abs(output) > 1 - tolerance or abs(output) < tolerance:
+                    step_counter += 1
+                else:
+                    step_lengths = np.append(step_lengths, step_counter)
+                    step_counter = 1
+    else:
+        raise ValueError(f"This function is not implemented for {params.agent}.")
+
+    counts = np.bincount(step_lengths.astype(int))
+    counts = counts[1:51]
+    plt.figure(figsize=(10, 6))
+    plt.plot(counts, color='blue', alpha=0.7)
+    plt.title(f'Step Length Distribution')
+    plt.xlabel('Step Length')
+    plt.ylabel('Frequency')
+    path = Path(DATA_PATH) / folder 
+    path.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path / 'step_length_distribution.png')
+
+if __name__ == '__main__':
+    plot_step_length_distribution_of_agents('del')

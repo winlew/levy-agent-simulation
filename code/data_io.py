@@ -1,6 +1,6 @@
 import torch
 import glob
-from agent import RnnAgent, Rnn, ReservoirAgent
+from agent import RnnAgent, Rnn, ReservoirAgent, LévyAgent
 from config import Params
 import pickle
 import numpy as np
@@ -29,6 +29,9 @@ def save_population(population, folder):
         if (isinstance(agent, ReservoirAgent)):
             with open(folder_path / f'agent_{i}.pkl', 'wb') as f:
                 pickle.dump(agent, f)
+        if (isinstance(agent, LévyAgent)):
+            with open(folder_path / f'agent_{i}.pkl', 'wb') as f:
+                pickle.dump(agent, f)
 
 def load_population(folder):
     """
@@ -43,7 +46,7 @@ def load_population(folder):
     params = load_parameters(folder)
     population = []
     path = Path(config.DATA_PATH) / folder
-    if params.agent == ReservoirAgent:
+    if params.agent == ReservoirAgent or params.agent == LévyAgent:
         for file in glob.glob(str(path) + f'/log/agents_at_epoch_{params.num_epochs}/agent_*.pkl'):
             with open(file, 'rb') as f:
                 agent = pickle.load(f)

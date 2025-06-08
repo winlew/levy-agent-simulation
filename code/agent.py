@@ -141,6 +141,7 @@ class LévyAgent(Agent):
         # optimal Lévy exponent
         self.mu = 1 
         self.pending_steps = 0
+        self.step_length_log = []
 
     def choose_action(self, _):
         """
@@ -152,6 +153,7 @@ class LévyAgent(Agent):
             x = np.random.uniform(0, 1)
             step_length = int(1 / x**(1/self.mu))
             self.pending_steps = step_length
+            self.step_length_log.append(step_length)
     
     def perform_action(self, environment):
         """
@@ -333,13 +335,20 @@ class ReservoirAgent(Agent):
         else:
             self.model = model
         self.time_step = 0
+        self.output_log = []
 
     def choose_action(self, _):
         """
-        Scale the direction with the output of the neural reservoir.
+        Transforms the output of the reservoir to a direction.
+        The tanh activation function squishes the output to the interval (-1, 1).
+        It is then scaled by 2π, which means that the agent can make a full 2π turn clockwise or counterclockwise.
+        That means each direction is covered twice, in the positive as well as in the negative spectrum and ultimatly means:
+        - turn by 180° at -0.5 and 0.5
+        - keep direction at 0, 1 and -1.
         """
         output = self.model.get_output(self.time_step)
-        angle = output * np.pi
+        self.output_log.append(output)
+        angle = output * 2 * np.pi
         direction = (self.direction + angle) % (2 * np.pi)
         self.direction = direction
         self.time_step += 1
@@ -607,9 +616,4 @@ class Reservoir():
         plt.close()
 
 if __name__ == "__main__":
-
-    for activity in np.arange(0.03, 0.05, 0.005):
-        print(activity)
-        reservoir = Reservoir(499, num_neurons=1000, burn_in_time=100, mean=0, standard_deviation=activity)
-        rounded_activity = round(activity, 5)
-        reservoir.plot_activity('activities', rounded_activity)
+    pass
