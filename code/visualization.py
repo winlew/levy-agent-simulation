@@ -333,6 +333,8 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.02):
     _, _, params = load_epoch_data(folder)
     population = load_population(folder)
 
+    ballistic_movement_detected = False
+
     if params.agent == LévyAgent:
         step_lengths = np.array([])
         for agent in population:
@@ -347,9 +349,13 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.02):
                 else:
                     step_lengths = np.append(step_lengths, step_counter)
                     step_counter = 1
+            if step_lengths.size == 0:
+                    ballistic_movement_detected = True
     else:
         raise ValueError(f"This function is not implemented for {params.agent}.")
 
+    if ballistic_movement_detected:
+        return
     counts = np.bincount(step_lengths.astype(int))
     counts = counts[1:51]
     plt.figure(figsize=(10, 6))
