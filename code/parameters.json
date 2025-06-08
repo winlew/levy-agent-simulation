@@ -11,7 +11,8 @@
         "border_buffer": 5,
         "food_buffer": 5,
         "empty": false,
-        "rigid_boundary": true
+        "rigid_boundary": true,
+        "seed": 34
     },
     "evolution": {
         "population_size": 50,
@@ -34,6 +35,6 @@
         "num_neurons": 1000,
         "burn_in_time": 100,
         "mean": 0,
-        "standard_deviation": 0.04
+        "standard_deviation": 0.032
     }
 }
