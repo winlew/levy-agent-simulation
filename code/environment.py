@@ -20,9 +20,11 @@ class Environment:
                 num_food (int): number of food particles
                 border_buffer (float): minimum distance between food particles and the border of the environment
                 food_buffer (float): minimum distance between food particles
+                seed (int): random seed for reproducibility of random number generation
         """
         self.size = params.size
         self.num_food = params.num_food
+        self.rng = np.random.default_rng(params.seed)
         if params.empty:
             self.food_positions = np.asarray([])
         else:
@@ -61,8 +63,8 @@ class Environment:
         max_attempts = config.MAX_FOOD_GENERATION_ATTEMPTS
 
         while food_count < self.num_food:   
-            suggested_food_x_position = np.random.uniform(border_buffer, self.size - border_buffer)
-            suggested_food_y_position = np.random.uniform(border_buffer, self.size - border_buffer)
+            suggested_food_x_position = self.rng.uniform(border_buffer, self.size - border_buffer)
+            suggested_food_y_position = self.rng.uniform(border_buffer, self.size - border_buffer)
 
             position_valid = True
 
@@ -156,4 +158,11 @@ class Environment:
 
 
 if __name__ == '__main__':
-    pass
+    from visualization import visualize_state
+    from parameters import Params
+    import matplotlib.pyplot as plt
+
+    params = Params.from_json('parameters.json')
+    env = Environment(params)
+    ax = visualize_state(env, None)
+    plt.show()
