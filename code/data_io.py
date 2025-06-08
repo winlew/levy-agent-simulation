@@ -1,7 +1,7 @@
 import torch
 import glob
 from agent import RnnAgent, Rnn, ReservoirAgent, LévyAgent
-from config import Params
+from parameters import Params
 import pickle
 import numpy as np
 import xarray as xr

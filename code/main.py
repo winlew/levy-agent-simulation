@@ -1,5 +1,5 @@
 from simulation import Simulation
-from config import Params
+from parameters import Params
 from visualization import visualize, plot_fitness_log
 
 def main():
