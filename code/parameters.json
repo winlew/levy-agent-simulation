@@ -1,21 +1,21 @@
 {
     "agent": {
-        "type": "reservoir",
+        "type": "ballistic",
         "eat_radius": 0.5,
         "velocity": 1,
         "perception_radius": 3
     },
     "environment": {
         "num_food": 20,
-        "size": 100,
+        "size": 200,
         "border_buffer": 5,
-        "food_buffer": 5,
+        "food_buffer": 2,
         "empty": false,
         "rigid_boundary": true,
         "seed": 34
     },
     "evolution": {
-        "population_size": 50,
+        "population_size": 100,
         "elite_fraction": 0.4,
         "mutation_fraction": 0.4,
         "mutation_rate": 0.1,
@@ -23,13 +23,14 @@
         "tolerance": 0.1
     },
     "simulation": {
-        "total_time": 699,
+        "total_time": 999,
         "delta_t": 1,
         "num_epochs": 1,
-        "iterations_per_epoch": 5 
+        "iterations_per_epoch": 10
     },
     "settings": {
-        "intervall_save": 5
+        "intervall_save": 5,
+        "save": true
     },
     "reservoir": {
         "num_neurons": 1000,

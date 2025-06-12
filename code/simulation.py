@@ -60,10 +60,11 @@ class Simulation:
 
         for epoch in range(1, self.num_epochs + 1):
             population = self.run_epoch(population, environment)
-            if epoch % self.params.intervall_save == 0 or epoch == 1:
+            if epoch % self.params.intervall_save == 0 or epoch == 1 and self.params.save:
                 save_epoch_data(folder, self.data, population, epoch)
-        save_simulation_context(folder, environment, self.params)
-        save_epoch_data(folder, self.data, population, self.params.num_epochs)
+        if self.params.save:
+            save_simulation_context(folder, environment, self.params)
+            save_epoch_data(folder, self.data, population, self.params.num_epochs)
         return self.fitnesses
 
     def set_up_population(self, population):
@@ -114,7 +115,7 @@ class Simulation:
             descendants (list): list of agents, the next generation
         """
         self.iteration = 0
-        for _ in tqdm(range(self.iterations_per_epoch)):
+        for _ in range(self.iterations_per_epoch):
             self.run_iteration(population, environment)
             self.iteration += 1
         # sum up consumed food particles over all time steps for every agent
