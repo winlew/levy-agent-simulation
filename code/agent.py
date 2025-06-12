@@ -139,7 +139,7 @@ class LévyAgent(Agent):
         # agent is blind, so it only senses food particles that are within its body 
         self.perception_radius = params.eat_radius
         # optimal Lévy exponent
-        self.mu = 1 
+        self.mu = 1
         self.pending_steps = 0
         self.step_length_log = []
 
@@ -161,7 +161,49 @@ class LévyAgent(Agent):
 
         Args:
             environment (Environment): the environment the agent navigates in
-            _ (None): unused
+        """
+        self.pending_steps -= 1
+        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
+        self.move(new_position, environment)
+
+    def reset(self):
+        super().reset()
+        self.pending_steps = 0
+
+class ExponentialAgent(Agent):
+    """ 
+    A blind agent whose step lengths are drawn from an exponential distribution.
+    Movement:
+    - agent chooses a random direction
+    - agent chooses a step length according to an exponential distribution
+    - agent travels in the chosen direction for step length / velocity time steps
+    """
+
+    def __init__(self, params):
+        super().__init__(params)
+        self.perception_radius = params.eat_radius
+        self.alpha = 1
+        self.pending_steps = 0
+        self.step_length_log = []
+
+    def choose_action(self, _):
+        """
+        Agent chooses a random direction and a step length from an exponential distribution
+        """
+        if self.pending_steps == 0 or self.sensed_wall:
+            self.sensed_wall = False
+            self.direction = np.random.uniform(0, 2*np.pi)
+            u = np.random.uniform(0, 1)
+            step_length = int(-np.log(1 - u) / self.alpha) + 1
+            self.pending_steps = step_length
+            self.step_length_log.append(step_length)
+    
+    def perform_action(self, environment):
+        """
+        Calculate the next position and move the agent
+
+        Args:
+            environment (Environment): the environment the agent navigates in
         """
         self.pending_steps -= 1
         new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
@@ -174,6 +216,10 @@ class LévyAgent(Agent):
 class BrownianAgent(Agent):
     """
     A blind agent that follows Brownian motion.
+    Movement:
+    - agent chooses a random direction
+    - agent chooses a step length according to a normal distribution
+    - agent travels in the chosen direction for step length / velocity time steps
     """
 
     def __init__(self, params):

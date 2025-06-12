@@ -3,11 +3,12 @@ import json
 import numpy as np
 
 # agent class to string mapping that is used to select the agent class in parameters.json
-from agent import RnnAgent, BallisticAgent, LévyAgent, BrownianAgent, ReservoirAgent
+from agent import RnnAgent, BallisticAgent, LévyAgent, BrownianAgent, ReservoirAgent, ExponentialAgent
 agent_classes = {
     "rnn": RnnAgent,
     "ballistic": BallisticAgent,
     "levy": LévyAgent,
+    "exponential": ExponentialAgent,
     "brownian": BrownianAgent,
     "reservoir": ReservoirAgent
 }
