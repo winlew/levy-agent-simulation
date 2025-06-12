@@ -139,7 +139,7 @@ class LévyAgent(Agent):
         # agent is blind, so it only senses food particles that are within its body 
         self.perception_radius = params.eat_radius
         # optimal Lévy exponent
-        self.mu = 1
+        self.mu = 2
         self.pending_steps = 0
         self.step_length_log = []
 
@@ -169,6 +169,7 @@ class LévyAgent(Agent):
     def reset(self):
         super().reset()
         self.pending_steps = 0
+        self.step_length_log = []
 
 class ExponentialAgent(Agent):
     """ 
@@ -212,6 +213,7 @@ class ExponentialAgent(Agent):
     def reset(self):
         super().reset()
         self.pending_steps = 0
+        self.step_length_log = []
 
 class BrownianAgent(Agent):
     """
@@ -230,6 +232,7 @@ class BrownianAgent(Agent):
         self.mean = 0
         self.standard_deviation = 1
         self.pending_steps = 0
+        self.step_length_log = []
 
     def choose_action(self, _):
         """
@@ -240,6 +243,7 @@ class BrownianAgent(Agent):
             self.direction = np.random.uniform(0, 2*np.pi)
             step_length = int(abs(np.random.normal(self.mean, self.standard_deviation))) + 1
             self.pending_steps = step_length
+            self.step_length_log.append(step_length)
     
     def perform_action(self, environment):
         """
@@ -255,6 +259,8 @@ class BrownianAgent(Agent):
     def reset(self):
         super().reset()
         self.pending_steps = 0
+        self.step_length_log = []
+
 
 class BallisticAgent(Agent):
     """
@@ -412,6 +418,7 @@ class ReservoirAgent(Agent):
     def reset(self):
         super().reset()
         self.time_step = 0
+        self.output_log = []
 
 class Rnn(nn.Module):
     """
