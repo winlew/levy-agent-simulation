@@ -50,7 +50,7 @@ class Simulation:
         """
         environment = Environment(self.params)
 
-        if self.params.rigid_boundary:
+        if self.params.resetting_boundary:
             environment.add_wall(np.array([0, 0]), np.array([0, self.params.size]))
             environment.add_wall(np.array([0, 0]), np.array([self.params.size, 0]))
             environment.add_wall(np.array([self.params.size, 0]), np.array([self.params.size, self.params.size]))
