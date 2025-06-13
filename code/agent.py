@@ -139,7 +139,7 @@ class LévyAgent(Agent):
         # agent is blind, so it only senses food particles that are within its body 
         self.perception_radius = params.eat_radius
         # optimal Lévy exponent
-        self.mu = 2
+        self.mu = 1.1
         self.pending_steps = 0
         self.step_length_log = []
 
@@ -419,6 +419,8 @@ class ReservoirAgent(Agent):
         super().reset()
         self.time_step = 0
         self.output_log = []
+        del self.model
+        self.model = Reservoir(self.params.simulation_steps, self.params.num_neurons, self.params.burn_in_time, self.params.mean, self.params.standard_deviation)
 
 class Rnn(nn.Module):
     """
