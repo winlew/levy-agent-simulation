@@ -183,7 +183,7 @@ class ExponentialAgent(Agent):
     def __init__(self, params):
         super().__init__(params)
         self.perception_radius = params.eat_radius
-        self.alpha = 1
+        self.alpha = params.alpha
         self.pending_steps = 0
         self.step_length_log = []
 
