@@ -305,8 +305,7 @@ def visualize_state(environment, agents):
     ax.set_ylabel('Y', fontsize=20)
     ax.set_title(f'Foraging Simulation Environment', fontsize=15)
     color_dict = getColorDict()
-    particle_scale = int(400/environment.size)
-    plotFood(environment, ax, color_dict, particle_scale)
+    plotFood(environment, ax, color_dict)
     if agents is not None:
         N = len(agents)
         percept_matrix = np.zeros((N,3))
