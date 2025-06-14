@@ -6,14 +6,52 @@ from pathlib import Path
 from tqdm import tqdm
 import config
 import multiprocessing as mp
+from agent import ReservoirAgent, LévyAgent
+from data_io import load_epoch_data, load_population, extract_gif_frames
+from config import DATA_PATH
 
-def plot_fitness_log(population_fitness_log, folder):
-    plt.plot(population_fitness_log)
+def visualize(folder):
+    """
+    Animate all recorded epochs of a simulation.
+    Args:
+        folder (str): folder where the simulation results are stored
+    """
+    _, environment, params = load_epoch_data(folder)
+    for i in range(0, params.num_epochs // params.intervall_save + 1):
+        epoch = 1 if (i == 0) else i * params.intervall_save
+        data, _, _ = load_epoch_data(folder, epoch)
+        animate(environment, params, data, folder_name=folder, file_name=f'animation_{epoch}')
+        if params.agent == ReservoirAgent:
+            create_reservoir_activity_plots(folder)
+            plot_step_length_distribution_of_agents(folder)
+        if params.agent == LévyAgent:
+            plot_step_length_distribution_of_agents(folder)
+
+def plot_fitness_log(population_fitness_log, folder, params):
+    """
+    Plot the average fitness of the population over the epochs.
+    """
+    plt.clf()
+    if params.num_epochs == 1:
+        plt.imshow(population_fitness_log, cmap='hot', interpolation='nearest')
+        plt.colorbar()
+        plt.xlabel('Agent Index')
+        plt.ylabel('Iteration')
+        plt.title('Fitness of the Population')
+        plt.savefig(config.DATA_PATH / folder / 'fitness_log.png')
+        return
+    plt.plot(np.sum(population_fitness_log, axis=(0,1)))
     plt.xlabel('Epoch')
-    plt.ylabel('Mean Fitness')
+    plt.ylabel('Cumulative Fitness')
     plt.title('Fitness Log of the Population')
     folder_path = config.DATA_PATH / folder / 'fitness_log.png'
     plt.savefig(folder_path)
+
+def create_reservoir_activity_plots(folder):
+    population = load_population(folder)
+    for i, agent in enumerate(population):
+        agent.model.plot_activity(folder, i)
+        agent.model.plot_eigenvalues_of_weight_matrix(folder, i)
 
 def update(frame, ax, env, params, data, color_dict):
     ax.cla()
@@ -36,7 +74,7 @@ def animate(environment, params, data, folder_name=None, file_name=None):
                 [(i, environment, params, data, folder_name, file_name, tqdm_positions[i]) for i in range(params.iterations_per_epoch)]
             )
 
-def animate_single_iteration(i, environment, params, data, folder_name, file_name, tqdm_position, save=True, elite_only=False):
+def animate_single_iteration(i, environment, params, data, folder_name, file_name, tqdm_position, save=True):
     iteration_data = data.sel(iteration=i)
 
     color_dict = getColorDict()
@@ -62,7 +100,7 @@ def animate_single_iteration(i, environment, params, data, folder_name, file_nam
         if file_name is None:
             ani.save(filename=data_path / f'animation{i+1}.gif', writer="pillow")
         else: 
-            ani.save(filename=data_path / f'{file_name}.gif', writer="pillow")
+            ani.save(filename=data_path / f'{file_name}_it{i+1}.gif', writer="pillow")
         print(f"Safed animation under:\n{data_path}")
 
 def render_state(ax, data, env, color_dict, params, frame):
@@ -93,10 +131,13 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
     # create 50 points along circles circumference
     theta = np.linspace(0, 2*np.pi, 50)
 
-    for row in data_matrix:
+    for i,row in enumerate(data_matrix):
         x = row[0]
         y = row[1]
         r = row[2]
+
+        # plot the number of the agent inside the circle
+        ax.text(x, y, str(i), fontsize=8, ha='center', va='center')
 
         # if there are even 4 rows
         if len(row) == 4 and row[3] != 0:
@@ -149,7 +190,7 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
 
 def plot_traces(ax, env, params, data, frame, color_dict):
     # plot agent traces
-    number_of_traces = params.simulation_steps
+    number_of_traces = 30 #params.simulation_steps
     i = 1
     velocity = params.velocity
     dt = params.delta_t
@@ -264,8 +305,7 @@ def visualize_state(environment, agents):
     ax.set_ylabel('Y', fontsize=20)
     ax.set_title(f'Foraging Simulation Environment', fontsize=15)
     color_dict = getColorDict()
-    particle_scale = int(400/environment.size)
-    plotFood(environment, ax, color_dict, particle_scale)
+    plotFood(environment, ax, color_dict)
     if agents is not None:
         N = len(agents)
         percept_matrix = np.zeros((N,3))
@@ -284,3 +324,62 @@ def visualize_state(environment, agents):
         plot_lines(environment,direction_matrix, alpha=1, color=color_dict["agent_color"], linewidth=1, ax=ax)
     # plt.show()
     return ax
+
+def plot_step_length_distribution_of_agents(folder, tolerance=0.02):
+    """
+    Make a distribution that shows how each step length of all agents is.
+    The step length describes how long an agent moved without turning.
+    """
+    _, _, params = load_epoch_data(folder)
+    population = load_population(folder)
+
+    ballistic_movement_detected = False
+
+    if params.agent == LévyAgent:
+        step_lengths = np.array([])
+        for agent in population:
+            step_lengths = np.concatenate((step_lengths, agent.step_length_log))
+    elif params.agent == ReservoirAgent:
+        step_lengths = np.array([])
+        for agent in population:
+            step_counter = 0
+            for output in agent.output_log:
+                if abs(output) > 1 - tolerance or abs(output) < tolerance:
+                    step_counter += 1
+                else:
+                    step_lengths = np.append(step_lengths, step_counter)
+                    step_counter = 1
+            if step_lengths.size == 0:
+                    ballistic_movement_detected = True
+    else:
+        raise ValueError(f"This function is not implemented for {params.agent}.")
+
+    if ballistic_movement_detected:
+        return
+    counts = np.bincount(step_lengths.astype(int))
+    counts = counts[1:51]
+    plt.figure(figsize=(10, 6))
+    plt.plot(counts, color='blue', alpha=0.7)
+    plt.title(f'Step Length Distribution')
+    plt.xlabel('Step Length')
+    plt.ylabel('Frequency')
+    path = Path(DATA_PATH) / folder 
+    path.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path / 'step_length_distribution.png')
+
+    # and create a log-binned plot
+    plt.clf()
+    log_bins = np.logspace(np.log10(1), np.log10(50), 15)
+    log_counts, _ = np.histogram(step_lengths, bins=log_bins)
+    plt.figure(figsize=(10, 6))
+    plt.plot(log_bins[:14], log_counts, '.', color='blue')
+    plt.xscale('log')
+    plt.title(f'Log-Binned Step Length Distribution')
+    plt.xlabel('Step Length (log scale)')
+    plt.ylabel('Frequency')
+    plt.xticks(log_bins, rotation=45)
+    plt.tight_layout()
+    plt.savefig(path / 'log_binned_step_length_distribution.png')
+
+if __name__ == '__main__':
+    plot_step_length_distribution_of_agents('reservoir_agents')

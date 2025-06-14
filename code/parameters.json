@@ -1,19 +1,23 @@
 {
     "agent": {
-        "type": "RnnAgent",
+        "type": "reservoir",
         "eat_radius": 0.5,
         "velocity": 1,
-        "perception_radius": 3
+        "perception_radius": 0.5,
+        "mu": 2,
+        "alpha": 1
     },
     "environment": {
-        "num_food": 10,
-        "size": 30,
+        "num_food": 100,
+        "size": 200,
         "border_buffer": 5,
-        "food_buffer": 5,
-        "empty": false
+        "food_buffer": 2,
+        "empty": false,
+        "resetting_boundary": true,
+        "seed": 34
     },
     "evolution": {
-        "population_size": 10,
+        "population_size": 100,
         "elite_fraction": 0.4,
         "mutation_fraction": 0.4,
         "mutation_rate": 0.1,
@@ -21,9 +25,19 @@
         "tolerance": 0.1
     },
     "simulation": {
-        "total_time": 99,
+        "total_time": 999,
         "delta_t": 1,
-        "num_epochs": 100,
-        "iterations_per_epoch": 3
+        "num_epochs": 1,
+        "iterations_per_epoch": 10
+    },
+    "settings": {
+        "intervall_save": 5,
+        "save": true
+    },
+    "reservoir": {
+        "num_neurons": 1000,
+        "burn_in_time": 100,
+        "mean": 0,
+        "standard_deviation": 0.032
     }
 }

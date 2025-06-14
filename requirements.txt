@@ -9,6 +9,7 @@ executing==2.1.0
 filelock==3.16.1
 fonttools==4.55.3
 fsspec==2024.12.0
+igraph==0.11.8
 ipykernel==6.29.5
 ipympl==0.9.6
 ipython==8.31.0
@@ -59,6 +60,7 @@ scipy==1.15.1
 six==1.17.0
 stack-data==0.6.3
 sympy==1.13.1
+texttable==1.7.0
 torch==2.5.1
 tornado==6.4.2
 tqdm==4.67.1

@@ -1,11 +1,11 @@
 import numpy as np
 import torch
 from agent import *
+import copy
 
 class EvolutionaryAlgorithm:
     """
     Evolutionary Algorithm class that trains the agent population by evolving them.
-
     """
 
     def __init__(self, params):
@@ -19,6 +19,7 @@ class EvolutionaryAlgorithm:
                 mutation_strength (float): strength of the mutation
                 tolerance (float): tolerance value to set weights
         """
+        self.params = params
         self.population_size = params.population_size
         self.elite_fraction = params.elite_fraction
         self.mutation_fraction = params.mutation_fraction
@@ -26,7 +27,7 @@ class EvolutionaryAlgorithm:
         self.mutation_strength = params.mutation_strength
         self.tolerance = params.tolerance
 
-    def evolve(self, population):
+    def evolve(self, population, agent):
         """
         Evolve the population of agents by:
         - copying the best performing agents to the next generation
@@ -35,15 +36,27 @@ class EvolutionaryAlgorithm:
         Only the elite of the current population serves as parents for the next generation.
 
         Args:
-            population (list): list of agents (expected to be sorted by fitness and to be of type RnnAgent)
+            population (list): list of agents (expected to be sorted by fitness)
+            agent (string): a string defining the agent class of the population
         
         Returns:
             list: list of new agents
         """
+        if agent is RnnAgent:
+            return self.evolve_rnn(population)
+        if agent is ReservoirAgent:
+            return self.evolve_reservoir(population)
 
+    def evolve_rnn(self, population):
+        """
+        Evolutionary Algorithm for the RnnAgent.
+        """
         descendants = []
         num_parents = int(self.population_size * self.elite_fraction)
         parents = population[:num_parents]
+
+        if self.population_size < 2:
+            raise ValueError("Population size must be at least 2 for evolution.")
 
         # ELITISM
         # copy parents to the next generation, but set small weights to zero
@@ -119,6 +132,71 @@ class EvolutionaryAlgorithm:
             mask = (torch.rand(parent1_weights.data.size()) < 0.5).float()
             child_weights.data.copy_(mask * parent1_weights.data + (1 - mask) * parent2_weights.data)
         return child_model
+
+    def evolve_reservoir(self, population):
+        """
+        Evolutionary Algorithm for the ReservoirAgent.
+        """
+
+        raise NotImplementedError("ReservoirAgent evolution is crap.")
+    
+        descendants = []
+        # num_parents = int(self.population_size * self.elite_fraction)
+        num_parents = 1
+        parents = population[:num_parents]
+
+        # ELITISM
+        # copy parents to the next generation, but set small weights to zero
+        for parent in parents:
+            child = ReservoirAgent(self.params, model = copy.deepcopy(parent.model))
+            child.model.output_weights = self.zero_out_small_weights(child.model.output_weights)
+            child.model.run()
+            descendants.append(child)
+        
+        # MUTATION
+        # mutate some of the best performing parents
+        for _ in range(int(self.population_size * self.mutation_fraction)):
+            parent = np.random.choice(parents[:int(self.elite_fraction * self.population_size)])
+            child = ReservoirAgent(self.params, model = copy.deepcopy(parent.model))
+            child.model.output_weights = copy.deepcopy(self.mutate_reservoir(child.model.output_weights))
+            child.model.run()
+            # child = ReservoirAgent(self.params)
+            descendants.append(child)
+
+        # CROSSOVER
+        # the rest is filled up with recombined agents from the best performing parents
+        while (len(descendants) < self.population_size):
+            parent1 = np.random.choice(descendants)
+            parent2 = np.random.choice(descendants)
+            child = ReservoirAgent(parent1.params, model = copy.deepcopy(parent1.model))
+            # TODO there is something fishy with the parent2 here - is same to parent 1??
+            child.model.output_weights = copy.deepcopy(self.crossover_reservoir(parent1.model.weights, parent2.model.weights))
+            child.model.run()
+            # child = ReservoirAgent(self.params)
+            descendants.append(child)
+        
+        return descendants
+
+    def mutate_reservoir(self, weights):
+        # Convert weights to a PyTorch tensor if they are not already
+        if isinstance(weights, np.ndarray):
+            weights = torch.tensor(weights, dtype=torch.float32)
+        mask = (torch.rand(weights.shape) < self.mutation_rate).float()
+        weights.data += torch.randn_like(weights) * mask * self.mutation_strength
+        weights.data = torch.min(torch.ones_like(weights.data), weights.data)
+        weights.data = torch.max(-torch.ones_like(weights.data), weights.data)
+        weights = self.zero_out_small_weights(weights)
+        return weights
+    
+    def crossover_reservoir(self, weights1, weights2):
+        # Convert weights to PyTorch tensors if they are not already
+        if isinstance(weights1, np.ndarray):
+            weights1 = torch.tensor(weights1, dtype=torch.float32)
+        if isinstance(weights2, np.ndarray):
+            weights2 = torch.tensor(weights2, dtype=torch.float32)
+        mask = (torch.randn(weights1.data.size()) < 0.5).float()
+        child_weights = mask * weights1.data + (1 - mask) * weights2.data
+        return child_weights
 
     def zero_out_small_weights(self, weights):
         """

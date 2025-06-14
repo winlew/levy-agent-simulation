@@ -2,8 +2,6 @@ import numpy as np
 from environment import Environment
 from agent import *
 from evolution import EvolutionaryAlgorithm
-import os
-import json
 from data_io import update_epoch_data, initialize_epoch_data, save_simulation_context, save_epoch_data
 import config
 import time
@@ -27,15 +25,13 @@ class Simulation:
         self.num_epochs = params.num_epochs
         self.iterations_per_epoch = params.iterations_per_epoch
         self.population_size = params.population_size
-        
         self.iteration = 0
-        # used to store
+        # trajectory_log is used to store
         # - position
         # - direction
         # - whether agent consumed food
-        # for every time step in a single iteration
+        # for every agent at every time step in a single iteration
         self.trajectory_log = np.zeros((self.params.simulation_steps, self.population_size, config.NUM_MOTION_ATTRIBUTES))
-        self.mean_fitness_per_epoch = []
         self.data = initialize_epoch_data(self.params)
 
     def run(self, folder, population=None):
@@ -43,27 +39,33 @@ class Simulation:
         Run a simulation.
 
         Each epoch:
-        - evaluates the performance of each agent iterations_per_epoch times where
+        - evaluate the performance of each agent iterations_per_epoch times where
           Each iteration:
           - simulates the agents behaviors for simulation_steps time steps
-        - evolves the population
+        - evolve the population
 
         Args:
             folder (str): store the simulation results here
             population (list): list of agents
         """
         environment = Environment(self.params)
+
+        if self.params.resetting_boundary:
+            environment.add_wall(np.array([0, 0]), np.array([0, self.params.size]))
+            environment.add_wall(np.array([0, 0]), np.array([self.params.size, 0]))
+            environment.add_wall(np.array([self.params.size, 0]), np.array([self.params.size, self.params.size]))
+            environment.add_wall(np.array([0, self.params.size]), np.array([self.params.size, self.params.size]))
+
         population = self.set_up_population(population)
 
-        print('Starting simulation...')
-        for epoch in tqdm(range(1, self.num_epochs + 1)):
+        for epoch in range(1, self.num_epochs + 1):
             population = self.run_epoch(population, environment)
-            if epoch % config.INTERVALL_SAVE == 0:
+            if epoch % self.params.intervall_save == 0 or epoch == 1 and self.params.save:
                 save_epoch_data(folder, self.data, population, epoch)
-        print('Saving simulation...')
-        save_simulation_context(folder, environment, self.params)
-        save_epoch_data(folder, self.data, population, self.params.num_epochs)
-        return self.mean_fitness_per_epoch
+        if self.params.save:
+            save_simulation_context(folder, environment, self.params)
+            save_epoch_data(folder, self.data, population, self.params.num_epochs)
+        return self.fitnesses
 
     def set_up_population(self, population):
         """
@@ -116,9 +118,8 @@ class Simulation:
         for _ in range(self.iterations_per_epoch):
             self.run_iteration(population, environment)
             self.iteration += 1
-        # sum up consumed food particles over all iterations and time steps
-        self.fitnesses = np.asarray(np.sum(self.data['ate'], axis=(0,1)))
-        self.mean_fitness_per_epoch.append(np.mean(self.fitnesses))
+        # sum up consumed food particles over all time steps for every agent
+        self.fitnesses = np.asarray(np.sum(self.data['ate'], axis=1))
         descendants = self.evolve(population) if self.params.evolve else population
         return descendants
     
@@ -163,8 +164,8 @@ class Simulation:
         """
         for agent in population:
             perception = agent.perceive(environment)
-            action = agent.choose_action(perception)
-            agent.perform_action(environment, action)
+            agent.choose_action(perception)
+            agent.perform_action(environment)
     
     def evolve(self, population):
         """
@@ -178,9 +179,9 @@ class Simulation:
         """
         evolutionary_algorithm = EvolutionaryAlgorithm(self.params)
         # sort population after performance in descending order
-        sorted_indices = np.argsort(self.fitnesses)[::-1]
+        sorted_indices = np.argsort(np.sum(self.fitnesses, axis=0))[::-1]
         sorted_population = [population[i] for i in sorted_indices]
-        descendants = evolutionary_algorithm.evolve(sorted_population) 
+        descendants = evolutionary_algorithm.evolve(sorted_population, self.params.agent) 
         return descendants
 
     def collect_data(self, population, step):
@@ -210,46 +211,7 @@ def record_time(func):
         return result
     return wrapper
 
-class Params:
-    """
-    Class that stores parameters of the simulation.
-    """
-    def __init__(self, **kwargs):
-        # map agent type to class
-        agent_type_str = kwargs.get('type')
-        self.agent = self._get_agent_class(agent_type_str)
-
-        # only RnnAgents can evolve
-        self.evolve = self.agent == RnnAgent
-
-        for key, value in kwargs.items():
-            if key != 'type': 
-                setattr(self, key, value)
-        
-        # one more for the initial positions
-        self.simulation_steps = len(np.arange(0, self.total_time, self.delta_t)) + 1
-
-    def _get_agent_class(self, agent_type_str):
-        agent_classes = {
-            "RnnAgent": RnnAgent,
-            "BallisticAgent": BallisticAgent,
-            "LevyAgent": LévyAgent
-        }
-        return agent_classes.get(agent_type_str)
-
-    @classmethod
-    def from_json(cls, file_path):
-        base_dir = os.path.dirname(__file__)
-        file_path = os.path.join(base_dir, file_path)
-        
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-        
-        flat_data = {**data['agent'], **data['environment'], 
-                     **data['evolution'], **data['simulation']}
-        
-        return cls(**flat_data)
-
-
 if __name__ == '__main__':
-    print('')
+    from data_io import extract_gif_frames
+    extract_gif_frames('d', 'animation_1_it2.gif')
+    pass

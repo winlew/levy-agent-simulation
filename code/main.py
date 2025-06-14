@@ -1,28 +1,22 @@
-from simulation import Simulation, Params
-from visualization import animate, plot_fitness_log
-from data_io import load_epoch_data, extract_gif_frames
-from agent import *
+from simulation import Simulation
+from parameters import Params
+from visualization import visualize, plot_fitness_log
 
 def main():
     """
-    Runs a simulation configured by the parameters in parameters.json.
-    Saves 
-    - environment,
-    - parameters and 
-    - agent motion.
-    Creates an animation of the last epoch of the simulation and plots the average population fitness.
+    Run a simulation configured by the parameters in parameters.json.
     """
-    folder = input('Enter folder name to save simulation results under: ')
+    # determine where to save the simulation results
+    folder = input('Enter folder name to save simulation results: ')
     params = Params.from_json('parameters.json')
 
     # execute simulation
     sim = Simulation(params, params.agent)
-    mean_fitness_per_epoch = sim.run(folder)
+    fitnesses = sim.run(folder)
+    
     # visualize results
-    data, environment, params = load_epoch_data(folder)
-    animate(environment, params, data, folder_name=folder)
-    extract_gif_frames(folder, 'animation1.gif')
-    plot_fitness_log(mean_fitness_per_epoch, folder)
+    visualize(folder)
+    plot_fitness_log(fitnesses, folder, params)
 
 if __name__ == '__main__':
     main()
