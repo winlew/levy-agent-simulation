@@ -94,7 +94,6 @@ class Agent:
         """
         for wall in environment.walls:
             if intersect(self.position, new_position, wall[0], wall[1]):
-                # self.direction = np.random.uniform(0, 2*np.pi)
                 self.sensed_wall = True
                 return
         new_position = np.mod(new_position, environment.size)
