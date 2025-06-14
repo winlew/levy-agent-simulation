@@ -80,7 +80,7 @@ Evolution
 - tolerance (float): tolerance value to set weights
 
 Simulation
-- total_time (int): total time of the simulation
+- total_time (int): total time of the simulation (cannot be changed after Params object has been created)
 - delta_t (int): time step increment (needed to translate from velocity units to position units)
 - num_epochs (int): number of epochs
 - iterations_per_epoch (int): number of iterations per epoch
