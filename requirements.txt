@@ -10,6 +10,7 @@ filelock==3.16.1
 fonttools==4.55.3
 fsspec==2024.12.0
 igraph==0.11.8
+imageio==2.37.0
 ipykernel==6.29.5
 ipympl==0.9.6
 ipython==8.31.0
@@ -46,6 +47,7 @@ parso==0.8.4
 pexpect==4.9.0
 pillow==11.1.0
 platformdirs==4.3.6
+powerlaw==1.5
 prompt_toolkit==3.0.50
 psutil==6.1.1
 ptyprocess==0.7.0
