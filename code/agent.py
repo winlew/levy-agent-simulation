@@ -139,7 +139,7 @@ class LévyAgent(Agent):
         # agent is blind, so it only senses food particles that are within its body 
         self.perception_radius = params.eat_radius
         # optimal Lévy exponent
-        self.mu = 1.1
+        self.mu = params.mu
         self.pending_steps = 0
         self.step_length_log = []
 

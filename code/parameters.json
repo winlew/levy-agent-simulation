@@ -1,12 +1,13 @@
 {
     "agent": {
-        "type": "ballistic",
+        "type": "reservoir",
         "eat_radius": 0.5,
         "velocity": 1,
-        "perception_radius": 3
+        "perception_radius": 3,
+        "mu": 2
     },
     "environment": {
-        "num_food": 20,
+        "num_food": 100,
         "size": 200,
         "border_buffer": 5,
         "food_buffer": 2,
