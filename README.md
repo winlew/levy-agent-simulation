@@ -2,7 +2,9 @@
 Simulate foraging behaviour of simple autonomous agents in a 2D environment. \
 Analyse under which circumstances the agents develop Lévy walk like motion patterns.
 
-<img src="./resources/simulation_example.gif" alt="simulation_example" width="500"/>
+<p align="center">
+  <img src="./resources/simulation_example.gif" alt="simulation_example" width="500"/>
+</p>
 
 ## Set Up
 Clone the repository
