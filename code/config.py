@@ -9,4 +9,4 @@ DATA_PATH = PROJECT_ROOT_PATH / 'data'
 
 MAX_FOOD_GENERATION_ATTEMPTS = 1000
 
-MAX_PROCESSES = min(mp.cpu_count(), 5)
+MAX_PROCESSES = min(mp.cpu_count(), 8)
