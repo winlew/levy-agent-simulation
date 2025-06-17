@@ -4,7 +4,7 @@
         "eat_radius": 0.5,
         "velocity": 1,
         "perception_radius": 0.5,
-        "mu": 2,
+        "mu": 1.01,
         "alpha": 1
     },
     "environment": {
@@ -28,7 +28,7 @@
         "total_time": 999,
         "delta_t": 1,
         "num_epochs": 1,
-        "iterations_per_epoch": 10
+        "iterations_per_epoch": 20
     },
     "settings": {
         "intervall_save": 5,
