@@ -4,7 +4,7 @@
         "eat_radius": 0.5,
         "velocity": 1,
         "perception_radius": 0.5,
-        "mu": 1.01,
+        "mu": 2,
         "alpha": 1
     },
     "environment": {
@@ -17,7 +17,7 @@
         "seed": 34
     },
     "evolution": {
-        "population_size": 100,
+        "population_size": 500,
         "elite_fraction": 0.4,
         "mutation_fraction": 0.4,
         "mutation_rate": 0.1,
