@@ -17,7 +17,7 @@
         "seed": 34
     },
     "evolution": {
-        "population_size": 500,
+        "population_size": 50,
         "elite_fraction": 0.4,
         "mutation_fraction": 0.4,
         "mutation_rate": 0.1,
