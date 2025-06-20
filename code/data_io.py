@@ -1,13 +1,11 @@
-import torch
 import glob
-from agent import RnnAgent, Rnn, ReservoirAgent, LévyAgent
+from agent import ReservoirAgent, LévyAgent
 from parameters import Params
 import pickle
 import numpy as np
 import xarray as xr
 from pathlib import Path
 import config
-import json
 from PIL import Image
 import os
 import shutil
@@ -24,8 +22,6 @@ def save_population(population, folder):
     folder_path = config.DATA_PATH / folder 
     folder_path.mkdir(parents=True, exist_ok=True)
     for i, agent in enumerate(population):
-        if (isinstance(agent, RnnAgent)):
-            torch.save(agent.model.state_dict(), folder_path / f'agent_{i}.pth')
         if (isinstance(agent, ReservoirAgent)):
             with open(folder_path / f'agent_{i}.pkl', 'wb') as f:
                 pickle.dump(agent, f)
@@ -47,23 +43,17 @@ def load_population(folder):
     population = []
     path = Path(config.DATA_PATH) / folder
     if params.agent == ReservoirAgent or params.agent == LévyAgent:
-        for file in glob.glob(str(path) + f'/log/agents_at_epoch_{params.num_epochs}/agent_*.pkl'):
+        for file in glob.glob(str(path) + f'/log/agents/agent_*.pkl'):
             with open(file, 'rb') as f:
                 agent = pickle.load(f)
                 population.append(agent)
-    elif params.agent == RnnAgent:
-        for file in glob.glob(str(path) * f'/log/agents_at_epoch_{params.num_epochs}/agent_*.pth'):
-            model = Rnn(params)
-            model.load_state_dict(torch.load(file, weights_only=False))
-            agent = RnnAgent(params, model=model)
-            population.append(agent)
     else:
         raise NotImplementedError(f"Loading agents of type {params.agent} is not implemented.")
     return population
 
-def initialize_epoch_data(params):
+def initialize_data(params):
     """
-    Initializes a xarray dataset to store the simulation results of a single epoch.
+    Initializes a xarray dataset to store the simulation results.
 
     x_position: of each agent at each time step in each iteration
     y_position: of each agent at each time step in each iteration
@@ -75,22 +65,22 @@ def initialize_epoch_data(params):
     """
     data = xr.Dataset(
         {
-        "x_position": (["iteration", "timestep", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
-        "y_position": (["iteration", "timestep", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
-        "direction": (["iteration", "timestep", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
-        "ate": (["iteration", "timestep", "agent"], np.zeros((params.iterations_per_epoch, params.simulation_steps, params.population_size))),
+        "x_position": (["iteration", "timestep", "agent"], np.zeros((params.iterations, params.simulation_steps, params.population_size))),
+        "y_position": (["iteration", "timestep", "agent"], np.zeros((params.iterations, params.simulation_steps, params.population_size))),
+        "direction": (["iteration", "timestep", "agent"], np.zeros((params.iterations, params.simulation_steps, params.population_size))),
+        "ate": (["iteration", "timestep", "agent"], np.zeros((params.iterations, params.simulation_steps, params.population_size))),
         },
         coords={
-            "iteration": np.arange(params.iterations_per_epoch),
+            "iteration": np.arange(params.iterations),
             "timestep": np.arange(params.simulation_steps),
             "agent": np.arange(params.population_size),
         }
     )
     return data
     
-def update_epoch_data(data, iteration, trajectory_log):
+def update_data(data, iteration, trajectory_log):
     """
-    Updates the data for a single epoch with the results of a single iteration.
+    Updates the data with the results of a single iteration.
     
     Args:
         data (xr.Dataset): dataset to store the simulation results
@@ -119,9 +109,9 @@ def save_simulation_context(folder, environment, params):
         pickle.dump(environment, f)
     shutil.copyfile(config.PROJECT_ROOT_PATH / 'code/parameters.json', folder_path / 'parameters.json')
 
-def save_epoch_data(folder, data, population, epoch):
+def save_data(folder, data, population):
     """
-    Make a snapshot of the results of a single epoch:
+    Make a snapshot of the simulation results:
     - agent motion
     - population.
     
@@ -129,29 +119,24 @@ def save_epoch_data(folder, data, population, epoch):
         folder (str): folder to save the simulation results in
         data (xr.Dataset): dataset with the simulation results of all iterations
         population (list): list of agents
-        epoch (int): index of the epoch
     """
     folder_path = config.DATA_PATH / folder / 'log'
     folder_path.mkdir(parents=True, exist_ok=True)
-    data.to_netcdf(folder_path / f'epoch_{epoch}.nc')
+    data.to_netcdf(folder_path / f'motion.nc')
     if population:
-        save_population(population, folder + f'/log/agents_at_epoch_{epoch}')
+        save_population(population, folder + '/log/agents')
 
-def load_epoch_data(folder, epoch=None):
+def load_data(folder):
     """
     Loads:
     - environment
     - agent motion data
     - parameters
-    from a single epoch of a simulation.
-    If epoch is not None, load the data of a specific epoch.
+    for a given simulation.
     """
     params = load_parameters(folder)
     folder_path = config.DATA_PATH / folder
-    if epoch is None:
-        data = xr.open_dataset(folder_path / 'log' / f'epoch_{params.num_epochs}.nc')
-    else:
-        data = xr.open_dataset(folder_path / 'log' / f'epoch_{epoch}.nc')
+    data = xr.open_dataset(folder_path / 'log/motion.nc')
     with open(folder_path / 'environment.pkl', 'rb') as f:
         environment = pickle.load(f)
     return data, environment, params
@@ -183,7 +168,7 @@ def combine_gifs_side_by_side(path1, path2, output_path):
     Args:
         path1 (str): path to the first gif
         path2 (str): path to the second gif
-        output_path (str): path to save the combined gif
+        output_path (str): path to save the combined gif at
     """
     gif1 = imageio.get_reader(path1)
     gif2 = imageio.get_reader(path2)

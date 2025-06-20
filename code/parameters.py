@@ -3,9 +3,8 @@ import json
 import numpy as np
 
 # agent class to string mapping that is used to select the agent class in parameters.json
-from agent import RnnAgent, BallisticAgent, LévyAgent, BrownianAgent, ReservoirAgent, ExponentialAgent
+from agent import BallisticAgent, LévyAgent, BrownianAgent, ReservoirAgent, ExponentialAgent
 agent_classes = {
-    "rnn": RnnAgent,
     "ballistic": BallisticAgent,
     "levy": LévyAgent,
     "exponential": ExponentialAgent,
@@ -26,14 +25,6 @@ class Params:
             if key != 'type': 
                 setattr(self, key, value)
 
-        # only rnn agents can evolve
-        if self.agent == agent_classes['rnn']:
-            self.evolve = True
-        else:
-            self.evolve = False
-            if self.num_epochs > 1:
-                raise UserWarning('Evolution is only supported for RnnAgents. Set num_epochs to 1. If you need more repetitions, consider increasing the iterations_per_epoch parameter.')
-        
         # one more for the initial positions
         self.simulation_steps = len(np.arange(0, self.total_time, self.delta_t)) + 1
 
@@ -48,8 +39,6 @@ class Params:
         with open(file_path, 'r') as f:
             data = json.load(f)
         
-        flat_data = {**data['agent'], **data['environment'], 
-                     **data['evolution'], **data['simulation'], 
-                     **data['settings'], **data['reservoir']}
+        flat_data = {**data['agent'], **data['environment'], **data['simulation']}
         
         return cls(**flat_data)

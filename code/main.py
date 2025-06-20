@@ -16,7 +16,7 @@ def main():
     
     # visualize results
     visualize(folder)
-    plot_fitness_log(fitnesses, folder, params)
+    plot_fitness_log(fitnesses, folder)
 
 if __name__ == '__main__':
     main()

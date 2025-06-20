@@ -1,8 +1,7 @@
 import numpy as np
 from environment import Environment
 from agent import *
-from evolution import EvolutionaryAlgorithm
-from data_io import update_epoch_data, initialize_epoch_data, save_simulation_context, save_epoch_data
+from data_io import update_data, initialize_data, save_simulation_context, save_data
 import config
 import time
 from tqdm import tqdm
@@ -22,8 +21,7 @@ class Simulation:
         self.agent = agent
         self.total_time = params.total_time
         self.delta_t = params.delta_t
-        self.num_epochs = params.num_epochs
-        self.iterations_per_epoch = params.iterations_per_epoch
+        self.iterations = params.iterations
         self.population_size = params.population_size
         self.iteration = 0
         # trajectory_log is used to store
@@ -32,17 +30,11 @@ class Simulation:
         # - whether agent consumed food
         # for every agent at every time step in a single iteration
         self.trajectory_log = np.zeros((self.params.simulation_steps, self.population_size, config.NUM_MOTION_ATTRIBUTES))
-        self.data = initialize_epoch_data(self.params)
+        self.data = initialize_data(self.params)
 
     def run(self, folder, population=None):
         """
         Run a simulation.
-
-        Each epoch:
-        - evaluate the performance of each agent iterations_per_epoch times where
-          Each iteration:
-          - simulates the agents behaviors for simulation_steps time steps
-        - evolve the population
 
         Args:
             folder (str): store the simulation results here
@@ -50,21 +42,19 @@ class Simulation:
         """
         environment = Environment(self.params)
 
-        if self.params.resetting_boundary:
-            environment.add_wall(np.array([0, 0]), np.array([0, self.params.size]))
-            environment.add_wall(np.array([0, 0]), np.array([self.params.size, 0]))
-            environment.add_wall(np.array([self.params.size, 0]), np.array([self.params.size, self.params.size]))
-            environment.add_wall(np.array([0, self.params.size]), np.array([self.params.size, self.params.size]))
-
         population = self.set_up_population(population)
 
-        for epoch in range(1, self.num_epochs + 1):
-            population = self.run_epoch(population, environment)
-            if epoch % self.params.intervall_save == 0 or epoch == 1 and self.params.save:
-                save_epoch_data(folder, self.data, population, epoch)
+        for _ in range(self.iterations):
+            self.run_iteration(population, environment)
+            self.iteration += 1
+        
+        # sum up consumed food particles over all time steps for every agent
+        self.fitnesses = np.asarray(np.sum(self.data['ate'], axis=1))
+
         if self.params.save:
             save_simulation_context(folder, environment, self.params)
-            save_epoch_data(folder, self.data, population, self.params.num_epochs)
+            save_data(folder, self.data, population)
+
         return self.fitnesses
 
     def set_up_population(self, population):
@@ -81,11 +71,11 @@ class Simulation:
     
     def record_iteration_data(func):
         """
-        Decorator to update the current epoch with the data from one iteration.
+        Decorator to update the data with one iteration.
         """
         def wrapper(self, population, environment):
             result = func(self, population, environment)
-            update_epoch_data(self.data, self.iteration, self.trajectory_log)
+            update_data(self.data, self.iteration, self.trajectory_log)
             return result
         return wrapper
 
@@ -99,35 +89,12 @@ class Simulation:
             self.collect_data(population, kwargs['step'])
             return result
         return wrapper
-
-    def run_epoch(self, population, environment):
-        """
-        Executes a single epoch:
-        - simulate agent foraging for all iterations
-        - evaluate the performance of each agent
-        - evolve the population.
-
-        Args:  
-            population (list): list of agents
-            environment (Environment): the environment the agents navigate in
-
-        Returns:
-            descendants (list): list of agents, the next generation
-        """
-        self.iteration = 0
-        for _ in range(self.iterations_per_epoch):
-            self.run_iteration(population, environment)
-            self.iteration += 1
-        # sum up consumed food particles over all time steps for every agent
-        self.fitnesses = np.asarray(np.sum(self.data['ate'], axis=1))
-        descendants = self.evolve(population) if self.params.evolve else population
-        return descendants
     
     @record_iteration_data
     def run_iteration(self, population, environment):
         """
         Executes a singe iteration that simulates agent foraging for a certain time.
-        
+
         Args:
             population (list): list of agents
             environment (Environment): the environment the agents navigate in
@@ -135,6 +102,7 @@ class Simulation:
         self.recycle_agents(population, environment, step = 0)
         for step in range(self.params.simulation_steps - 1):
             self.simulate_step(population, environment, step = step + 1)
+        return population
 
     @record_move
     def recycle_agents(self, population, environment, *args, **kwargs):
@@ -166,23 +134,6 @@ class Simulation:
             perception = agent.perceive(environment)
             agent.choose_action(perception)
             agent.perform_action(environment)
-    
-    def evolve(self, population):
-        """
-        Exchange old population with a new population.
-
-        Args:   
-            population (list): list of agents
-
-        Returns:
-            descendants (list): list of agents
-        """
-        evolutionary_algorithm = EvolutionaryAlgorithm(self.params)
-        # sort population after performance in descending order
-        sorted_indices = np.argsort(np.sum(self.fitnesses, axis=0))[::-1]
-        sorted_population = [population[i] for i in sorted_indices]
-        descendants = evolutionary_algorithm.evolve(sorted_population, self.params.agent) 
-        return descendants
 
     def collect_data(self, population, step):
         """

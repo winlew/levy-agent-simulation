@@ -1,40 +1,5 @@
-import numpy as np
 import math
 
-def vector_to_angle(normalized_vector):
-    """
-    Transforms a normalized 2D vector to an angle in radians.
-    
-    Args:
-        normalized_vector (np.array): 2D vector with length 1
-
-    Returns:
-        angle (float): angle in radians (ego perspective)
-    """
-    angle = np.arctan2(normalized_vector[1], normalized_vector[0])
-    return angle
-
-def calculate_angle_difference(food_direction, agent_direction):
-    """
-    Calculates the difference between two angles.
-    1. Shift food direction to world perspective by adding pi
-    2. Substract the angles
-    3. Transform negative differences to positive ones by wrapping around 2pi
-    4. Shift back to ego perspective by substracting pi
-
-    Args:
-        food_direction (float): angle from agent to food particle in radians (ego perspective)
-        agent_direction (float): angle that the agent is facing in radians (world perspective)
-
-    Returns:
-        delta (float): angle difference in radians (ego perspective)
-    """
-    assert(-np.pi <= food_direction <= np.pi)
-    assert(0 <= agent_direction <= 2*np.pi)
-    delta = (food_direction + np.pi - agent_direction) % (2 * np.pi) - np.pi
-    return delta
-
-# TODO refactor and understand. This logic does not work for periodic boundaries
 def counter_clockwise(p1, p2, p3):
     return (p3[1]-p1[1]) * (p2[0]-p1[0]) > (p2[1]-p1[1]) * (p3[0]-p1[0])
 

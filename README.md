@@ -1,10 +1,13 @@
 # Lévy Agent Simulation
-Simulate foraging behaviour of simple autonomous agents in a 2D environment. \
-Analyse under which circumstances the agents develop Lévy walk like motion patterns.
+Lévy walks are considered as the optimal search strategy when blind agents explore sparse environments with unknown target distribution.
 
 <p align="center">
   <img src="./resources/simulation_example.gif" alt="simulation_example" width="500"/>
 </p>
+
+# Objective
+The goal of this project is to analyse under which conditions Lévy walk like motion patterns appear in agents that forage in a simple 2D world.
+We aim to investigate whether agents controlled by neural reservoirs can exhibit Lévy walk like behavior, and how their fitness compares to agents with other control mechanisms.
 
 ## Set Up
 Clone the repository
@@ -20,90 +23,83 @@ Install the required packages
 
 ```pip install -r requirements.txt```
 
-Run a simulation by executing main.py.
-Configure it by modifying parameters.json.
+Run a simulation by executing main.py and configure it by modifying parameters.json.
+
+# Simulation
+In each iteration a population of independent agents searches the environment for targets (food particles) for a limited number of time steps.
+The fitness of each agent is measured by the amount of food particles that it consumed.
 
 ## Environment
-The environment is the 2D area in which the simulation takes place.
-- quadratic
-- has periodic boundaries
-- contains randomly distributed food particles.
+2D quasi-continuous plane containing food particles, agents and optionally walls segments.
+
+Food Particles:
+- spawn in randomly at the beginning of the simulation with the restrictions:
+  - cannot be closer together than a certain threshold
+  - have a minimum margin towards the boundaries
+- destructible
+- increase agent fitness by 1 if consumed
+
+Boundaries:
+| Boundary Condition | Explanation                                                     | Consideration                                                                                                     |
+| ------------------ | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| periodic           | crossing the boundary makes agent reappear at the opposite side | beneficial for ballistic agents                                                                                   |
+| rigid              | block agents from moving across                                 | penalizes Lévy agents because they may waste many steps walking against the wall, also not biologically plausible |
+| bouncing           | reflect agent trajectories                                      | beneficial for ballistic agents                                                                                   |
+| resetting          | make agent choose a new direction when walking against a wall   | probably fairest option                                                                                           |
+
 
 ## Agents
-The positioning of the agent in the environment is described by
-- its 2D position
-- the direction it faces.
+Each agent has:
+- a position $(x,y)$
+- a direction $\in [0,2\pi]$
+- a velocity
+
+At each timestep, an agent's position is updated by converting its direction into $\Delta x$ and $\Delta y$, scaling them by the agent's velocty and the timestep $\Delta t$ and adding the result to the agent's current $x$ and $y$ coordinates.
+
+Perspectives:
+- world perspective $[0, 2\pi]$ is used to calculate the direction each agent has in the environment
+- ego perspective $[-\pi,\pi]$ is used as a relative orientation measure of the agent itself
+
+Detecting Food Particles:
+After each movement, an agent checks for food within its circular body centered at its new position. Since positions are updated in discrete steps, an additional function checks the area between consecutive positions to ensure no food particle is skipped.
 
 There are multiple agent types:
 - Ballistic agent (walks straight only)
 - Lévy agent (follow Lévy walk like motion patterns)
 - Brownian agent (follows brownian motion)
-- RNN agent (behavior is controlled by a hybrid 3 layer neural network)
 - Reservoir agent (controlled by reservoir computing)
 
-## Training Through Evolution
-Not all agents can be trained. 
-Each epoch the next generation is assembled from
-- elites
-  - best performing fraction of population
-  - small weights are set to zero
-- mutated
-  - random chosen agent that is mutated
-  - small weights are set to zero
-- crossovers
-  - between elites and mutated
-
-## Simulation
-Each simulation runs for a certain number of epochs.
-In each epoch the performance of each agent is evaluated for a designated number of iterations where each iteration simulates agent behavior for a limited number of time steps.
-At the end of each epoch the current population is exchanged with the next.
+# Parameters
 Simulations are configured by the parameters.json file. Here a detailed explanation of the purpose of each parameter:
 
 Agent 
-- type (class): class of the agent that is used one of {'rnn', 'levy', 'ballistic', 'brownian', 'reservoir'}
-- eat_radius (float): distance at which the agent eats a food particle
-- velocity (float): velocity of the agent 
-- perception_radius (float): perception radius of the agent
+- population_size (int): number of agents
+- type (string): identifier of the agent type that is used
+- eat_radius (float): size of the agent
+- velocity (float): velocity of the agent
+- mu (float): $\mu$ of the Lévy agent
+- alpha (float): $\alpha$ of the exponential agent
+- num_neurons (int): number of neurons in the reservoir
+- burn_in_time (int): how long the network activity is simulated without being used after kickstart
+- mean (float): mean of the normal distribution that describes the internal weights of the reservoir
+- standard_deviation (float): standard deviation of the normal distribution that describes the internal weights of the reservoir
 
 Environment 
-- size (int): size of the environment
 - num_food (int): number of food particles in the environment
+- size (int): size of the environment
 - border_buffer (float): minimum distance between food particles and the border of the environment
-- food_buffer (float): minimum distance between food particles choose as perception_radius + eat_radius so that agents cannot 'see' next food item from current one 
-- empty (bool): if true, no food particles are spawned into the environment
+- food_buffer (float): minimum distance between food particles
 - resetting_boundary (bool): if true, then there are walls around the edges of the environment that the agents cannot cross
-
-Evolution
-- population_size (int): number of agents in the population
-- elite_fraction (float): fraction of the best performing agents that will be copied to the next generation
-- mutation_fraction (float): fraction of the population that will be mutated
-- mutation_rate (float): probability of a weight being mutated
-- mutation_strength (float): amplitude of the mutation
-- tolerance (float): tolerance value to set weights
+- seed (int): seed after which the food particles in the environment are created
 
 Simulation
 - total_time (int): total time of the simulation (cannot be changed after Params object has been created)
 - delta_t (int): time step increment (needed to translate from velocity units to position units)
-- num_epochs (int): number of epochs
-- iterations_per_epoch (int): number of iterations per epoch
-
-Settings
-- intervall_save (int): determines the frequency of saves (< num_epochs)
-
-### Perspectives
-There are two types of perspectives used in the project
-- ego perspective $[-\pi, \pi]$
-- world perspective $[0, 2\pi]$
-
-Agents themselves perceive the world in ego perspective while their actual orientation is in world perspective.
-That allows the agents to perceive the world relative to their own orientation where 0 is the current direction they are facing.
-In world perspective 0 is 3 o'clock.
-
-Note: For ego perspective clockwise is negative and counter-clockwise is positive.
+- iterations (int): number of iterations for which the simulation is repeated
+- save (bool): whether to store the simulation data
 
 # Limitations
 - agents can eat at max 1 food particle at each time step
-- food particles have to have a minimal distance that is larger than perception_radius from each other
 - check_path() is not periodic boundary safe but does not have to be either if border_buffer > velocity
 
 # Coding Conventions
@@ -135,4 +131,3 @@ Regarding the structure I tried to modularize by files. All parameters are colle
 - Abbreviations:
   - num: number
   - params: parameters
-  - Rnn: Recurrent Neural Network

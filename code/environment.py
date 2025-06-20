@@ -25,12 +25,15 @@ class Environment:
         self.size = params.size
         self.num_food = params.num_food
         self.rng = np.random.default_rng(params.seed)
-        if params.empty:
-            self.food_positions = np.asarray([])
-        else:
-            self.food_positions = self.generate_food_positions(params.border_buffer, params.food_buffer)
+        self.food_positions = self.generate_food_positions(params.border_buffer, params.food_buffer)
         
         self.walls = []
+
+        if params.resetting_boundary:
+            self.add_wall(np.array([0, 0]), np.array([0, params.size]))
+            self.add_wall(np.array([0, 0]), np.array([params.size, 0]))
+            self.add_wall(np.array([params.size, 0]), np.array([params.size, params.size]))
+            self.add_wall(np.array([0, params.size]), np.array([params.size, params.size]))
     
     def add_wall(self, start, end):
         """
@@ -87,7 +90,7 @@ class Environment:
 
     def get_closest_food(self, agent):
         """
-        Find the closest food particle to the agent within its perception radius.
+        Find the closest food particle to the agent.
 
         Args:
             agent (Agent): the agent that is searching for food
@@ -111,8 +114,8 @@ class Environment:
 
         distances = np.sqrt(dx**2 + dy**2)
 
-        # filter for visible and unconsumed food
-        in_range = (distances <= agent.perception_radius) & (~agent.food_mask)
+        # filter for unconsumed food
+        in_range = ~agent.food_mask
         if distances[in_range].size > 0:
             closest_distance = np.min(distances[in_range])
             closest_index = np.where(distances == closest_distance)[0][0]

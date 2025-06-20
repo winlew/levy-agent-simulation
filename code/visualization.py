@@ -7,45 +7,36 @@ from tqdm import tqdm
 import config
 import multiprocessing as mp
 from agent import ReservoirAgent, LévyAgent
-from data_io import load_epoch_data, load_population, extract_gif_frames
+from data_io import load_data, load_population, extract_gif_frames
 from config import DATA_PATH
 
 def visualize(folder):
     """
-    Animate all recorded epochs of a simulation.
+    Animate a simulation.
     Args:
         folder (str): folder where the simulation results are stored
     """
-    _, environment, params = load_epoch_data(folder)
-    for i in range(0, params.num_epochs // params.intervall_save + 1):
-        epoch = 1 if (i == 0) else i * params.intervall_save
-        data, _, _ = load_epoch_data(folder, epoch)
-        animate(environment, params, data, folder_name=folder, file_name=f'animation_{epoch}')
-        if params.agent == ReservoirAgent:
-            create_reservoir_activity_plots(folder)
-            plot_step_length_distribution_of_agents(folder)
-        if params.agent == LévyAgent:
-            plot_step_length_distribution_of_agents(folder)
+    _, environment, params = load_data(folder)
+    data, _, _ = load_data(folder)
+    animate(environment, params, data, folder_name=folder)
+    if params.agent == ReservoirAgent:
+        create_reservoir_activity_plots(folder)
+        plot_step_length_distribution_of_agents(folder)
+    if params.agent == LévyAgent:
+        plot_step_length_distribution_of_agents(folder)
 
-def plot_fitness_log(population_fitness_log, folder, params):
+def plot_fitness_log(fitnesses, folder):
     """
-    Plot the average fitness of the population over the epochs.
+    Visualize population fitness.
     """
     plt.clf()
-    if params.num_epochs == 1:
-        plt.imshow(population_fitness_log, cmap='hot', interpolation='nearest')
-        plt.colorbar()
-        plt.xlabel('Agent Index')
-        plt.ylabel('Iteration')
-        plt.title('Fitness of the Population')
-        plt.savefig(config.DATA_PATH / folder / 'fitness_log.png')
-        return
-    plt.plot(np.sum(population_fitness_log, axis=(0,1)))
-    plt.xlabel('Epoch')
-    plt.ylabel('Cumulative Fitness')
-    plt.title('Fitness Log of the Population')
-    folder_path = config.DATA_PATH / folder / 'fitness_log.png'
-    plt.savefig(folder_path)
+    plt.imshow(fitnesses, cmap='hot', interpolation='nearest')
+    plt.colorbar()
+    plt.xlabel('Agent Index')
+    plt.ylabel('Iteration')
+    plt.title('Fitness of the Population')
+    plt.savefig(config.DATA_PATH / folder / 'fitness_log.png')
+    return
 
 def create_reservoir_activity_plots(folder):
     population = load_population(folder)
@@ -61,20 +52,20 @@ def update(frame, ax, env, params, data, color_dict):
     ax.set_yticks([0,env.size])
     ax.set_xlabel('X', fontsize=20)
     ax.set_ylabel('Y', fontsize=20)
-    ax.set_title(f"Foraging Simulation Environment || t={frame}/{len(data.coords['timestep'])}")
+    ax.set_title(f"Simulation Environment || t={frame}/{len(data.coords['timestep'])}")
     render_state(ax, data, env, color_dict, params, frame)
     plot_traces(ax, env, params, data, frame, color_dict)
 
-def animate(environment, params, data, folder_name=None, file_name=None):
+def animate(environment, params, data, folder_name=None):
     with mp.Manager() as manager:
-        tqdm_positions = manager.list(range(params.iterations_per_epoch))
+        tqdm_positions = manager.list(range(params.iterations))
         with mp.Pool(config.MAX_PROCESSES) as pool:
             pool.starmap(
                 animate_single_iteration,
-                [(i, environment, params, data, folder_name, file_name, tqdm_positions[i]) for i in range(params.iterations_per_epoch)]
+                [(i, environment, params, data, folder_name, tqdm_positions[i]) for i in range(params.iterations)]
             )
 
-def animate_single_iteration(i, environment, params, data, folder_name, file_name, tqdm_position, save=True):
+def animate_single_iteration(i, environment, params, data, folder_name, tqdm_position, save=True):
     iteration_data = data.sel(iteration=i)
 
     color_dict = getColorDict()
@@ -86,29 +77,23 @@ def animate_single_iteration(i, environment, params, data, folder_name, file_nam
     ax.set_yticks([0, environment.size])
     ax.set_xlabel('X', fontsize = 20)
     ax.set_ylabel('Y', fontsize = 20)
-    ax.set_title(f"Foraging Simulation Environment || t=0/{len(data.coords['timestep'])}")
+    ax.set_title(f"Simulation Environment || t=0/{len(data.coords['timestep'])}")
 
     render_state(ax, iteration_data, environment, color_dict, params, 0)
 
-    frames = tqdm(range(len(iteration_data.coords['timestep'])), desc=f"Animating {i+1}/{params.iterations_per_epoch}", unit="frame", position=tqdm_position, leave=True)
+    frames = tqdm(range(len(iteration_data.coords['timestep'])), desc=f"Animating {i+1}/{params.iterations}", unit="frame", position=tqdm_position, leave=True)
     ani = animation.FuncAnimation(fig, update, frames=frames, fargs=(ax, environment, params, iteration_data, color_dict), interval=100)
     
     if save:
         project_root = Path(__file__).parent.parent
         data_path = project_root / 'data' / folder_name 
         data_path.mkdir(parents=True, exist_ok=True)
-        if file_name is None:
-            ani.save(filename=data_path / f'animation{i+1}.gif', writer="pillow")
-        else: 
-            ani.save(filename=data_path / f'{file_name}_it{i+1}.gif', writer="pillow")
+        ani.save(filename=data_path / f'animation_{i+1}.gif', writer="pillow")
         print(f"Safed animation under:\n{data_path}")
 
 def render_state(ax, data, env, color_dict, params, frame):
     plotWall(env, ax, color_dict)
     plotFood(env, ax, color_dict)
-    # plot agent perception patches
-    percept_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, len(data.coords['agent']))))
-    plotFilledPatches(env, percept_matrix.transpose(), alpha=0.2, color=color_dict["agent_color"], ax=ax)
     # plot agent eat patches
     eat_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, len(data.coords['agent'])), data['ate'].values[frame]))
     plotFilledPatches(env, eat_matrix.transpose(), alpha=0.5, color=color_dict["agent_color"], ax=ax)
@@ -303,21 +288,17 @@ def visualize_state(environment, agents):
     ax.set_yticks([0,environment.size])
     ax.set_xlabel('X', fontsize=20)
     ax.set_ylabel('Y', fontsize=20)
-    ax.set_title(f'Foraging Simulation Environment', fontsize=15)
+    ax.set_title(f'Simulation Environment', fontsize=15)
     color_dict = getColorDict()
     plotFood(environment, ax, color_dict)
     if agents is not None:
         N = len(agents)
-        percept_matrix = np.zeros((N,3))
         eat_matrix = np.zeros((N,3))
         direction_matrix = np.zeros((N,4))
         for agent_idx,agent in enumerate(agents):
-            percept_matrix[agent_idx] = [agent.position[0],agent.position[1],agent.perception_radius]
             eat_matrix[agent_idx] = [agent.position[0],agent.position[1],agent.eat_radius]
             direction_matrix[agent_idx] = [agent.position[0],agent.position[1],agent.direction,agent.eat_radius*2]
     
-        # Plot agent perception patches
-        plotFilledPatches(environment,percept_matrix, alpha=0.2, color=color_dict["agent_color"], ax=ax)
         # Plot agent eat patches
         plotFilledPatches(environment,eat_matrix, alpha=0.5, color=color_dict["agent_color"], ax=ax)
         # Plot agent directions
@@ -330,7 +311,7 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.02):
     Make a distribution that shows how each step length of all agents is.
     The step length describes how long an agent moved without turning.
     """
-    _, _, params = load_epoch_data(folder)
+    _, _, params = load_data(folder)
     population = load_population(folder)
 
     ballistic_movement_detected = False

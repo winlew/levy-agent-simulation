@@ -63,7 +63,6 @@ six==1.17.0
 stack-data==0.6.3
 sympy==1.13.1
 texttable==1.7.0
-torch==2.5.1
 tornado==6.4.2
 tqdm==4.67.1
 traitlets==5.14.3
