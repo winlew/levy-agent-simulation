@@ -9,6 +9,8 @@ import multiprocessing as mp
 from agent import ReservoirAgent, LévyAgent
 from data_io import load_data, load_population, extract_gif_frames
 from config import DATA_PATH
+from environment import Environment
+from parameters import Params
 
 def visualize(folder):
     """
@@ -95,11 +97,11 @@ def render_state(ax, data, env, color_dict, params, frame):
     plotWall(env, ax, color_dict)
     plotFood(env, ax, color_dict)
     # plot agent eat patches
-    eat_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, len(data.coords['agent'])), data['ate'].values[frame]))
+    eat_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, params.population_size), data['ate'].values[frame]))
     plotFilledPatches(env, eat_matrix.transpose(), alpha=0.5, color=color_dict["agent_color"], ax=ax)
     # plot agent directions (the noses that show the direction the agents are heading)
     if frame != 0:
-        direction_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['direction'].values, np.repeat(params.eat_radius*2,len(data.coords['agent']))))
+        direction_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['direction'].values, np.repeat(params.eat_radius*2, params.population_size)))
         plot_lines(env, direction_matrix.transpose(), alpha=1, color=color_dict["agent_color"], linewidth=1, ax=ax)
 
 def plotWall(env, ax, color_dict):
@@ -175,12 +177,12 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
 
 def plot_traces(ax, env, params, data, frame, color_dict):
     # plot agent traces
-    number_of_traces = 30 #params.simulation_steps
+    number_of_traces = params.simulation_steps
     i = 1
     velocity = params.velocity
     dt = params.delta_t
     while(frame - i >= 0 and i <= number_of_traces):
-        distances = np.repeat(velocity * dt, len(data.coords['agent']))
+        distances = np.repeat(velocity * dt, params.population_size)
         trace_matrix = np.column_stack((data.sel(timestep=frame-i)['x_position'].values, data.sel(timestep=frame-i)['y_position'].values, data.sel(timestep=frame-i+1)['direction'].values, distances))
         plot_lines(env, trace_matrix, alpha=1-(i-1)/number_of_traces, color=color_dict["agent_color"], linewidth=0.5, ax=ax)
         i += 1
@@ -306,7 +308,7 @@ def visualize_state(environment, agents):
     # plt.show()
     return ax
 
-def plot_step_length_distribution_of_agents(folder, tolerance=0.02):
+def plot_step_length_distribution_of_agents(folder, tolerance=0.001):
     """
     Make a distribution that shows how each step length of all agents is.
     The step length describes how long an agent moved without turning.
@@ -316,22 +318,22 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.02):
 
     ballistic_movement_detected = False
 
+    step_lengths = np.array([])
     if params.agent == LévyAgent:
-        step_lengths = np.array([])
         for agent in population:
             step_lengths = np.concatenate((step_lengths, agent.step_length_log))
     elif params.agent == ReservoirAgent:
-        step_lengths = np.array([])
         for agent in population:
-            step_counter = 0
+            step_counter = 1
             for output in agent.output_log:
                 if abs(output) > 1 - tolerance or abs(output) < tolerance:
                     step_counter += 1
                 else:
                     step_lengths = np.append(step_lengths, step_counter)
                     step_counter = 1
+            step_lengths = np.append(step_lengths, step_counter)
             if step_lengths.size == 0:
-                    ballistic_movement_detected = True
+                ballistic_movement_detected = True
     else:
         raise ValueError(f"This function is not implemented for {params.agent}.")
 
@@ -350,17 +352,50 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.02):
 
     # and create a log-binned plot
     plt.clf()
-    log_bins = np.logspace(np.log10(1), np.log10(50), 15)
-    log_counts, _ = np.histogram(step_lengths, bins=log_bins)
-    plt.figure(figsize=(10, 6))
-    plt.plot(log_bins[:14], log_counts, '.', color='blue')
+    plt.figure(figsize=(8, 8))
+    counts, bins = np.histogram(step_lengths, bins=np.logspace(np.log10(min(step_lengths)), np.log10(max(step_lengths)), 50))
+    plt.loglog(bins[:-1], counts, marker='o', linestyle='none')
     plt.xscale('log')
     plt.title(f'Log-Binned Step Length Distribution')
     plt.xlabel('Step Length (log scale)')
     plt.ylabel('Frequency')
-    plt.xticks(log_bins, rotation=45)
     plt.tight_layout()
     plt.savefig(path / 'log_binned_step_length_distribution.png')
 
+def extract_agent_trajectory(folder, iteration, agent_number):
+    """
+    Isolate the trajectory of a certain agent in an empty environment.
+    """
+    iteration -= 1
+    # load data
+    data, _, params = load_data(folder)
+    single_agent_data = data.sel(agent = agent_number)
+    x_positions = data['x_position'].values[iteration, :, 7]
+    y_positions = data['y_position'].values[iteration, :, 7]
+    x_min, x_max = x_positions.min(), x_positions.max()
+    y_min, y_max = y_positions.min(), y_positions.max()
+    single_agent_data['x_position'].values = single_agent_data['x_position'].values - x_min
+    single_agent_data['y_position'].values = single_agent_data['y_position'].values - y_min
+    # set up parameters
+    params = Params(
+        num_food = 0,
+        size = max(x_max - x_min, y_max - y_min) + 10,
+        velocity = params.velocity,
+        eat_radius = params.eat_radius,
+        iterations = 1,
+        population_size = 1,
+        total_time = params.total_time,
+        delta_t = params.delta_t,
+        border_buffer = params.border_buffer,
+        food_buffer = params.food_buffer,
+        seed = 10,
+        resetting_boundary = False
+    )
+    # TODO agent should not be colored red when eating
+    # single_agent_data['ate'] = np.zeros((params.iterations, params.simulation_steps, 1)),
+    environment = Environment(params)
+    animate_single_iteration(iteration, environment, params, single_agent_data, folder + f'/isolated_agent_{agent_number}', 0, save=True)
+
 if __name__ == '__main__':
-    plot_step_length_distribution_of_agents('reservoir_agents')
+    extract_agent_trajectory('del_crit', 1, 7)
+    extract_agent_trajectory('del_crit', 1, 10)
