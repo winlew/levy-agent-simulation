@@ -418,7 +418,7 @@ class Reservoir():
         plt.scatter(eigenvalues.real, eigenvalues.imag, s=10)
         plt.xlabel(r'$\mathrm{Re}(\lambda)$')
         plt.ylabel(r'$\mathrm{Im}(\lambda)$')
-        plt.title(f'Eigenvalues of the Connectivity Matrix (Spectral Radius: {spectral_radius:.2f})')
+        plt.title(f'Eigenvalues of the Connectivity Matrix (Spectral Radius: {spectral_radius:.3f})')
         plt.axhline(0, color='black', lw=0.2, ls='--')
         plt.axvline(0, color='black', lw=0.2, ls='--')
         circle = plt.Circle((0, 0), spectral_radius, color='grey', fill=False, lw=1)
