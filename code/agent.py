@@ -421,7 +421,7 @@ class Reservoir():
         plt.title(f'Eigenvalues of the Connectivity Matrix (Spectral Radius: {spectral_radius:.3f})')
         plt.axhline(0, color='black', lw=0.2, ls='--')
         plt.axvline(0, color='black', lw=0.2, ls='--')
-        circle = plt.Circle((0, 0), spectral_radius, color='grey', fill=False, lw=1)
+        circle = plt.Circle((0, 0), spectral_radius, color='grey', ls='--', fill=False, lw=1)
         plt.gca().add_artist(circle)
         plt.grid(linewidth=0.3)
         plt.xlim(-1.5 * spectral_radius, 1.5 * spectral_radius)
