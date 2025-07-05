@@ -177,7 +177,7 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
 
 def plot_traces(ax, env, params, data, frame, color_dict):
     # plot agent traces
-    number_of_traces = params.simulation_steps
+    number_of_traces = 30 #params.simulation_steps
     i = 1
     velocity = params.velocity
     dt = params.delta_t
@@ -308,10 +308,15 @@ def visualize_state(environment, agents):
     # plt.show()
     return ax
 
-def plot_step_length_distribution_of_agents(folder, tolerance=0.001):
+def plot_step_length_distribution_of_agents(folder, tolerance=0.001, bins=51):
     """
     Make a distribution that shows how each step length of all agents is.
     The step length describes how long an agent moved without turning.
+
+    Args:
+        folder (str): folder where the simulation results are stored
+        tolerance (float): threshold to determine whether an agent is moving straight or not
+        bins (int): number of bins for the histogram
     """
     _, _, params = load_data(folder)
     population = load_population(folder)
@@ -340,17 +345,15 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.001):
     if ballistic_movement_detected:
         return
     counts = np.bincount(step_lengths.astype(int))
-    counts = counts[1:51]
     plt.figure(figsize=(10, 6))
-    plt.plot(counts, color='blue', alpha=0.7)
-    plt.title(f'Step Length Distribution')
+    plt.bar(range(len(counts)), counts, color='blue', alpha=0.7)
+    plt.title(f'Histogram of Step Lengths')
     plt.xlabel('Step Length')
     plt.ylabel('Frequency')
     path = Path(DATA_PATH) / folder 
     path.mkdir(parents=True, exist_ok=True)
     plt.savefig(path / 'step_length_distribution.png')
 
-    # and create a log-binned plot
     plt.clf()
     plt.figure(figsize=(8, 8))
     counts, bins = np.histogram(step_lengths, bins=np.logspace(np.log10(min(step_lengths)), np.log10(max(step_lengths)), 50))
@@ -397,5 +400,6 @@ def extract_agent_trajectory(folder, iteration, agent_number):
     animate_single_iteration(iteration, environment, params, single_agent_data, folder + f'/isolated_agent_{agent_number}', 0, save=True)
 
 if __name__ == '__main__':
-    extract_agent_trajectory('del_crit', 1, 7)
-    extract_agent_trajectory('del_crit', 1, 10)
+    # extract_agent_trajectory('crit', 2, 18)
+    # extract_agent_trajectory('crit', 2, 29)
+    extract_agent_trajectory('crit', 2, 41)
