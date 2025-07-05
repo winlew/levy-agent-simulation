@@ -23,7 +23,8 @@ Install the required packages
 
 ```pip install -r requirements.txt```
 
-Run a simulation by executing main.py and configure it by modifying parameters.json.
+Configure a simulation in parameters.json. Then start it by executing main.py. 
+It will prompt you in the terminal to specify the location on where to store the results inside the data folder.
 
 # Simulation
 In each iteration a population of independent agents searches the environment for targets (food particles) for a limited number of time steps.
