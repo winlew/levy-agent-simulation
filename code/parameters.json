@@ -1,6 +1,6 @@
 {
     "agent": {
-        "population_size": 50,
+        "population_size": 1000,
         "type": "reservoir",
         "eat_radius": 0.5,
         "velocity": 1,
@@ -9,18 +9,18 @@
         "num_neurons": 1000,
         "burn_in_time": 500,
         "mean": 0,
-        "standard_deviation": 0.03162
+        "standard_deviation": 0.032
     },
     "environment": {
-        "num_food": 100,
-        "size": 200,
-        "border_buffer": 5,
+        "num_food": 0,
+        "size": 100,
+        "border_buffer": 0,
         "food_buffer": 2,
         "resetting_boundary": false,
         "seed": 34
     },
     "simulation": {
-        "total_time": 299,
+        "total_time": 999,
         "delta_t": 1,
         "iterations": 2,
         "save": true
