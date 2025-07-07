@@ -18,8 +18,7 @@ def visualize(folder):
     Args:
         folder (str): folder where the simulation results are stored
     """
-    _, environment, params = load_data(folder)
-    data, _, _ = load_data(folder)
+    data, environment, params = load_data(folder)
     animate(environment, params, data, folder_name=folder)
     if params.agent == ReservoirAgent:
         create_reservoir_activity_plots(folder)
@@ -70,7 +69,7 @@ def animate(environment, params, data, folder_name=None):
 def animate_single_iteration(i, environment, params, data, folder_name, tqdm_position, save=True):
     iteration_data = data.sel(iteration=i)
 
-    color_dict = getColorDict()
+    color_dict = get_color_dict()
     plt.rcParams.update({'font.size': 14})
     fig, ax = plt.subplots(figsize = (10, 10))
     ax.set_xlim(0, environment.size)
@@ -175,16 +174,22 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
             ys = y-env.size + r * np.sin(theta)
             ax.fill(xn, ys, color=color, alpha=alpha)
 
-def plot_traces(ax, env, params, data, frame, color_dict):
-    # plot agent traces
-    number_of_traces = 30 #params.simulation_steps
+def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 30, fade=True):
+    """
+    Plot the agent traces for the last `number_of_traces` time steps.
+    Set 'number_of_traces' to params.simulation_steps to plot all traces.    
+    """
     i = 1
     velocity = params.velocity
     dt = params.delta_t
+    if fade:
+        opacity = 1-(i-1)/number_of_traces
+    else:
+        opacity = 1
     while(frame - i >= 0 and i <= number_of_traces):
         distances = np.repeat(velocity * dt, params.population_size)
         trace_matrix = np.column_stack((data.sel(timestep=frame-i)['x_position'].values, data.sel(timestep=frame-i)['y_position'].values, data.sel(timestep=frame-i+1)['direction'].values, distances))
-        plot_lines(env, trace_matrix, alpha=1-(i-1)/number_of_traces, color=color_dict["agent_color"], linewidth=0.5, ax=ax)
+        plot_lines(env, trace_matrix, alpha=opacity, color=color_dict["trace_color"], linewidth=0.5, ax=ax)
         i += 1
    
 def plot_lines(env, data_matrix, alpha, color, linewidth, ax):
@@ -248,36 +253,17 @@ def plot_lines(env, data_matrix, alpha, color, linewidth, ax):
             ys = np.linspace(y-env.size, y-env.size+np.sin(direction)*length,10)
             ax.plot(xn,ys,color=color, alpha=alpha, linewidth=linewidth)
 
-def getColorDict():
-
-    color_palette1 = np.array(met_brew(name="Tsimshian", n=7, brew_type="continuous"))
-    color_palette2 = met_brew(name="VanGogh3", n=8, brew_type='continuous')
-    color_palette3 = np.array(met_brew(name="Peru1", n=6, brew_type="continuous"))
-    color_palette4 = np.array(met_brew(name="Lakota", n=6, brew_type="continuous"))
-    color_palette5 = np.array(met_brew(name="Cassatt1", n=8, brew_type="continuous"))
-    color_palette6 = np.array(met_brew(name="OKeeffe2", n=7, brew_type="continuous"))
-
-    agent_color = color_palette4[3]
-    agent_colors = list(np.concatenate(([agent_color],color_palette1[[4,5,6]])))
-    food_color = color_palette2[-2]
-    patch_color = color_palette2[1]
-    trained_colors = list([color_palette1[0],color_palette1[1]])
-    velo_colors = met_brew(name="Juarez", n=2)
-    elitePop_colors = list([color_palette5[0],color_palette5[-1]])
-    mean_std_best_colors = list([color_palette6[6],color_palette6[1],color_palette6[4]])
-    data_fit1_fit2_colors = list([color_palette3[-1],color_palette3[2],color_palette3[0]])
-
-    # Default case
-    color_dict = {"food_color": food_color, # Color of food particles (USED)
-                "patch_color": patch_color, # Color of food patches
-                "agent_colors": agent_colors, # Colors of [trained, levy1, levy2, brownian] agents
-                "agent_color": agent_color,#agent_colors[0], # Color of trained agent
-                "trained_colors": trained_colors, # Colors for trained agent comparison
-                "velocity_colors": velo_colors,
-                "elitePop_colors": elitePop_colors, # Colors for elite vs population comparisons
-                "mean_std_best_colors": mean_std_best_colors, # Colors to plot mean + std area around + best individual results
-                "data_fit1_fit2_colors": data_fit1_fit2_colors # Colors to plot data + powerlaw fit + exponential fit
-                }
+def get_color_dict():
+    """
+    Returns a dictionary with colors from the met_brew package for the visualization.
+    """
+    color_palette = met_brew(name='Troy', n=8, brew_type='continuous')
+    agent_color = color_palette[2]
+    trace_color = '#373a46'
+    food_color = '#000000'
+    color_dict = {"food_color": food_color,
+                  "agent_color": agent_color,
+                  "trace_color": trace_color}
     return color_dict
 
 # function to show environment and agents at a given time step
@@ -291,7 +277,7 @@ def visualize_state(environment, agents):
     ax.set_xlabel('X', fontsize=20)
     ax.set_ylabel('Y', fontsize=20)
     ax.set_title(f'Simulation Environment', fontsize=15)
-    color_dict = getColorDict()
+    color_dict = get_color_dict()
     plotFood(environment, ax, color_dict)
     if agents is not None:
         N = len(agents)
