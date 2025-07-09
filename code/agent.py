@@ -144,7 +144,7 @@ class LévyAgent(Agent):
             self.sensed_wall = False
             self.direction = np.random.uniform(0, 2*np.pi)
             x = np.random.uniform(0, 1)
-            step_length = int(1 / x**(1/self.mu))
+            step_length = int(1 / x**(1/(self.mu - 1)))
             self.pending_steps = step_length
             self.step_length_log.append(step_length)
     
