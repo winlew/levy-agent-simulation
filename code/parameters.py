@@ -28,6 +28,16 @@ class Params:
         # one more for the initial positions
         self.simulation_steps = len(np.arange(0, self.total_time, self.delta_t)) + 1
 
+        if self.mu <= 1:
+            raise ValueError("Parameter 'mu' must be greater than 1.")
+        if self.mu > 3:
+            raise ValueError("Parameter 'mu' must be less than or equal to 3.")
+        if self.alpha <= 0:
+            raise ValueError("Parameter 'alpha' must be greater than 0.")
+        
+        if self.mu < 1.5:
+            print("Warning: Value for mu is too low, simulation may crash.")
+        
     def _get_agent_class(self, agent_type_str):
         return agent_classes.get(agent_type_str)
 
