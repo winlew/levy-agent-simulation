@@ -294,15 +294,16 @@ def visualize_state(environment, agents):
     # plt.show()
     return ax
 
-def plot_step_length_distribution_of_agents(folder, tolerance=0.001, bins=51):
+def plot_step_length_distribution_of_agents(folder, tolerance=0.001):
     """
-    Make a distribution that shows how each step length of all agents is.
-    The step length describes how long an agent moved without turning.
+    Plot how the step lengths of all agents are distributed.
+    - create regular histogram
+    - create log-binned histogram
+    The step lengths is defined as the number of time steps an agent moves straight in a certain direction.
 
     Args:
         folder (str): folder where the simulation results are stored
         tolerance (float): threshold to determine whether an agent is moving straight or not
-        bins (int): number of bins for the histogram
     """
     _, _, params = load_data(folder)
     population = load_population(folder)
@@ -330,6 +331,7 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.001, bins=51):
 
     if ballistic_movement_detected:
         return
+    
     counts = np.bincount(step_lengths.astype(int))
     plt.figure(figsize=(10, 6))
     plt.bar(range(len(counts)), counts, color='blue', alpha=0.7)
@@ -338,15 +340,16 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.001, bins=51):
     plt.ylabel('Frequency')
     path = Path(DATA_PATH) / folder 
     path.mkdir(parents=True, exist_ok=True)
+    plt.tight_layout()
     plt.savefig(path / 'step_length_distribution.png')
 
     plt.clf()
     plt.figure(figsize=(8, 8))
-    counts, bins = np.histogram(step_lengths, bins=np.logspace(np.log10(min(step_lengths)), np.log10(max(step_lengths)), 50))
+    counts, bins = np.histogram(step_lengths, bins=[2**i for i in range(int(max(step_lengths)).bit_length() + 1)])
     plt.loglog(bins[:-1], counts, marker='o', linestyle='none')
-    plt.xscale('log')
+    plt.grid(True, which="both", ls="--")
     plt.title(f'Log-Binned Step Length Distribution')
-    plt.xlabel('Step Length (log scale)')
+    plt.xlabel('Step Length')
     plt.ylabel('Frequency')
     plt.tight_layout()
     plt.savefig(path / 'log_binned_step_length_distribution.png')
