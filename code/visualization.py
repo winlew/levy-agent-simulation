@@ -46,9 +46,10 @@ def visualize_reservoir(folder):
     for i, agent in enumerate(population):
         plot_activity(agent.model, folder, i)
         plot_eigenvalues_of_weight_matrix(agent.model, folder, i)
-        plot_weights(agent.model, folder, i)
         draw_reservoir_graph(agent.model, folder, i)
         plot_reservoir_outputs(agent, folder, i)
+        # not worth the effort
+        # plot_weights(agent.model, folder, i)
 
 def update(frame, ax, env, params, data, color_dict):
     ax.cla()
@@ -262,8 +263,8 @@ def get_color_dict():
     Returns a dictionary with colors from the met_brew package for the visualization.
     """
     color_palette = met_brew(name='Troy', n=8, brew_type='continuous')
-    agent_color = color_palette[2]
-    trace_color = '#373a46'
+    agent_color = '#D7816A'
+    trace_color = '#93B5C6'
     food_color = '#000000'
     color_dict = {"food_color": food_color,
                   "agent_color": agent_color,
@@ -358,7 +359,7 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.001):
     plt.tight_layout()
     plt.savefig(path / 'log_binned_step_length_distribution.png')
 
-def extract_agent_trajectory(folder, iteration, agent_number):
+def extract_agent_trajectory(folder, iteration, agent_number, buffer = 5):
     """
     Isolate the trajectory of a certain agent in an empty environment.
     """
@@ -366,18 +367,20 @@ def extract_agent_trajectory(folder, iteration, agent_number):
     # load data
     data, _, params = load_data(folder)
     single_agent_data = data.sel(agent = agent_number)
-    x_positions = data['x_position'].values[iteration, :, 7]
-    y_positions = data['y_position'].values[iteration, :, 7]
+    x_positions = data['x_position'].values[iteration, :, agent_number]
+    y_positions = data['y_position'].values[iteration, :, agent_number]
     x_min, x_max = x_positions.min(), x_positions.max()
     y_min, y_max = y_positions.min(), y_positions.max()
-    single_agent_data['x_position'].values = single_agent_data['x_position'].values - x_min
-    single_agent_data['y_position'].values = single_agent_data['y_position'].values - y_min
+    single_agent_data['x_position'].values = single_agent_data['x_position'].values - x_min + buffer
+    single_agent_data['y_position'].values = single_agent_data['y_position'].values - y_min + buffer
     # set up parameters
     params = Params(
         num_food = 0,
-        size = max(x_max - x_min, y_max - y_min) + 10,
+        size = max(x_max - x_min, y_max - y_min) + 2*buffer,
         velocity = params.velocity,
         eat_radius = params.eat_radius,
+        mu = 2,
+        alpha = 1,
         iterations = 1,
         population_size = 1,
         total_time = params.total_time,
@@ -596,7 +599,7 @@ def animate_reservoir(reservoir, file_name):
     plt.close()
 
 if __name__ == '__main__':
-    from agent import Reservoir
-    reservoir = Reservoir(10)
-    draw_reservoir_graph(reservoir, '0')
-    # extract_agent_trajectory('crit', 2, 41)
+    # from agent import Reservoir
+    # reservoir = Reservoir(10)
+    # draw_reservoir_graph(reservoir, '0')
+    extract_agent_trajectory('024_small_world', 2, 45)
