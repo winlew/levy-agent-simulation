@@ -1,11 +1,6 @@
 import numpy as np
-import igraph as ig
 from tqdm import tqdm
-from matplotlib.animation import FuncAnimation
-import matplotlib.pyplot as plt
 from utils import Point, rectangle_from_points, inside_rectangle, intersect
-from config import DATA_PATH
-from pathlib import Path
 
 class Agent:
     """
@@ -327,7 +322,7 @@ class Reservoir():
     A neuron is activated if exactly one of its neighbors was active at the previous time step.
     """
 
-    def __init__(self, time_steps, num_neurons=100, burn_in_time=200, mean=0, standard_deviation=3):
+    def __init__(self, time_steps, num_neurons=1000, burn_in_time=500, mean=0, standard_deviation=0.032):
         """
         Args:
             time_steps (int): number of time steps to simulate
@@ -375,137 +370,6 @@ class Reservoir():
         output = np.dot(self.neuron_state_time_matrix[time_step], self.output_weights)
         output = np.tanh(output)
         return output
-    
-    # TODO visualization functions should be moved to visualization.py
-
-    def plot_weights(self):
-        """
-        Plot a heatmap of the weight matrix.
-        """
-        _, axes = plt.subplots(1, 1, figsize=(10, 5))
-        axes.imshow(self.weight_matrix, cmap='coolwarm', aspect='auto', interpolation='none')
-        axes.set_ylabel('neuron #')
-        axes.set_xlabel('neuron #')
-        plt.savefig('reservoir_weights.png')
-
-    def plot_activity(self, folder, id):
-        """
-        Plot the activity of each neuron over time.
-        """
-        _, ax = plt.subplots(figsize=(10, 5))
-        activity = np.concatenate((self.burn_in_state_matrix, self.neuron_state_time_matrix), axis=0)
-        im = ax.imshow(activity.T, cmap='plasma', aspect='auto')
-        cbar = plt.colorbar(im, ax=ax)
-        cbar.set_label('Activity', labelpad=10)
-        ax.set_ylabel('Neuron')
-        ax.set_xlabel('Time')
-        burn_in_end = self.burn_in_state_matrix.shape[0]
-        ax.axvline(burn_in_end, color='black', linestyle='-', linewidth=1.5, label='Burn In End')
-        plt.legend(loc='upper right', framealpha=1)
-        # ax.text(burn_in_end - 7, self.neuron_state_time_matrix.shape[1]+5, 'burn in', rotation=45, color='black', fontsize=8, va='center', ha='left')
-        path = Path(DATA_PATH) / folder / 'reservoir_activities'
-        path.mkdir(parents=True, exist_ok=True)
-        plt.savefig(path / f'agent_{id}.png')
-        plt.close()
-
-    def plot_eigenvalues_of_weight_matrix(self, folder, id):
-        """
-        Plot the eigenvalues of the weight matrix in the complex plane.
-        """
-        eigenvalues, _ = np.linalg.eig(self.weight_matrix)
-        spectral_radius = max(abs(eigenvalues))
-        plt.figure(figsize=(8, 12))
-        plt.scatter(eigenvalues.real, eigenvalues.imag, s=10)
-        plt.xlabel(r'$\mathrm{Re}(\lambda)$')
-        plt.ylabel(r'$\mathrm{Im}(\lambda)$')
-        plt.title(f'Eigenvalues of the Connectivity Matrix (Spectral Radius: {spectral_radius:.3f})')
-        plt.axhline(0, color='black', lw=0.2, ls='--')
-        plt.axvline(0, color='black', lw=0.2, ls='--')
-        circle = plt.Circle((0, 0), spectral_radius, color='grey', ls='--', fill=False, lw=1)
-        plt.gca().add_artist(circle)
-        plt.grid(linewidth=0.3)
-        plt.xlim(-1.5 * spectral_radius, 1.5 * spectral_radius)
-        plt.ylim(-1.5 * spectral_radius, 1.5 * spectral_radius)
-        plt.gca().set_aspect('equal', adjustable='box')
-        path = Path(DATA_PATH) / folder / 'eigenvalues'
-        path.mkdir(parents=True, exist_ok=True)
-        plt.savefig(path / f'agent_{id}.png')
-        plt.close()
-
-    # TODO animate function has to get a rework
-    def animate(self, file_name):
-        """
-        Animate the network activity over time.
-        Args:
-            file_name (str): name of the output GIF file
-            folder (str): folder to save the GIF in
-        """
-        time_steps = self.neuron_state_time_matrix.shape[0]
-
-        g = ig.Graph.Adjacency(np.abs(self.weight_matrix).tolist(), mode='directed')
-        # layout = g.layout(layout='auto')
-        layout = g.layout_fruchterman_reingold()
-
-        # COLOR WEIGHTS AND MAKE STRONGER WEIGHT CONNECTIONS SHORTER
-        # shift to positive, by adding the smallest negative weight, then divide by the range to scale to [0, 1]
-        normalized_weights = (self.weight_matrix - self.weight_matrix.min()) / (self.weight_matrix.max() - self.weight_matrix.min())
-        # Important: For distance-based layouts, SMALLER values should pull nodes CLOSER
-        # So we need to INVERT the weights for edges (higher weight = shorter distance)
-        # We'll use a small epsilon to avoid division by zero for zero weights
-        epsilon = 0.0001
-        edge_distances = []
-        for i, edge in enumerate(g.es):
-            source, target = edge.source, edge.target
-            # Higher normalized weight = shorter distance (closer nodes)
-            # Invert and scale: smaller values will pull nodes closer in the layout
-            edge_distance = 1.0 - normalized_weights[source][target] + epsilon
-            edge_distances.append(edge_distance)
-            # Update edge attributes
-            edge["distance"] = edge_distance
-            edge["width"] = 1 + 5 * normalized_weights[source][target]  # Thicker lines for stronger connections
-            # Set edge color based on weight
-            if normalized_weights[source][target] > 0.66:
-                edge["color"] = "darkred"  # Strongest connections
-            elif normalized_weights[source][target] > 0.33:
-                edge["color"] = "red"      # Medium-strong connections
-            else:
-                edge["color"] = "pink"     # Weaker connections
-
-        # COLORIZE NODES BASED ON STATES
-        min_state = self.neuron_state_time_matrix.min()
-        max_state = self.neuron_state_time_matrix.max()
-        # shift to positive, by adding the smallest negative state, then divide by the range to scale to [0, 1], then scale to 0..2 and shift to -1..1
-        normalized_states = (self.neuron_state_time_matrix - min_state) / (max_state - min_state) * 2 - 1
-
-        fig, ax = plt.subplots(figsize=(10, 8))
-        
-        def update(frame):
-            ax.clear()
-            # shade node colors based on neuron state (values between -1 and 1) RGB: red for positive, blue for negative
-            node_colors = [(1.0 - max(0, state), 1.0 - abs(state), 1.0 - max(0, -state)) for state in normalized_states[frame]]
-            # adjust edge transparency based on normalized weights RGBA: darker for higher absolute weights
-            # edge_colors = [(0, 0, 0, abs(normalized_weights[e.source, e.target])) for e in g.es]
-            ig.plot(
-                g, 
-                target=ax,
-                layout=layout,
-                vertex_color=node_colors,
-                vertex_size=20,
-                vertex_label_size=8,
-                edge_width=0.5,
-                edge_color=[edge["color"] for edge in g.es],
-                edge_arrow_size=0.5,
-                edge_arrow_width=0.2,
-                margin=30
-            )
-            ax.set_title(f"Reservoir at Timestep {frame}/{time_steps}")
-            ax.set_axis_off()
-            return ax
-
-        frames = tqdm(range(time_steps), desc="Rendering animation")
-        ani = FuncAnimation(fig, update, frames=frames, interval=500, blit=False)
-        ani.save(file_name, writer='pillow', fps=10, dpi=100)
-        plt.close()
 
 if __name__ == "__main__":
     pass
