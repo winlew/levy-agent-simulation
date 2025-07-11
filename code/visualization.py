@@ -43,11 +43,12 @@ def plot_fitness_log(fitnesses, folder):
 
 def visualize_reservoir(folder):
     population = load_population(folder)
-    for i, agent in tqdm(enumerate(population)):
+    for i, agent in enumerate(population):
         plot_activity(agent.model, folder, i)
         plot_eigenvalues_of_weight_matrix(agent.model, folder, i)
-        plot_weights(population[0].model, folder, i)
-        draw_reservoir_graph(population[0].model, folder, i)
+        plot_weights(agent.model, folder, i)
+        draw_reservoir_graph(agent.model, folder, i)
+        plot_reservoir_outputs(agent, folder, i)
 
 def update(frame, ax, env, params, data, color_dict):
     ax.cla()
@@ -481,7 +482,7 @@ def plot_eigenvalues_of_weight_matrix(reservoir, folder, id):
     """
     eigenvalues, _ = np.linalg.eig(reservoir.weight_matrix)
     spectral_radius = max(abs(eigenvalues))
-    plt.figure(figsize=(8, 12))
+    plt.figure(figsize=(8, 8))
     plt.scatter(eigenvalues.real, eigenvalues.imag, s=10)
     plt.xlabel(r'$\mathrm{Re}(\lambda)$')
     plt.ylabel(r'$\mathrm{Im}(\lambda)$')
@@ -495,6 +496,24 @@ def plot_eigenvalues_of_weight_matrix(reservoir, folder, id):
     plt.ylim(-1.5 * spectral_radius, 1.5 * spectral_radius)
     plt.gca().set_aspect('equal', adjustable='box')
     path = Path(DATA_PATH) / folder / 'eigenvalues'
+    path.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path / f'agent_{id}.svg', format='svg')
+    plt.close()
+
+def plot_reservoir_outputs(agent, folder, id):
+    """
+    Plots the reservoir outputs over time.
+
+    Args
+        agent (ReservoirAgent): an agent that is controlled by a neural reservoir
+        folder (str): where to store the plot
+        id (int): number of the agent
+    """
+    plt.figure(figsize=(15, 5))
+    plt.scatter(range(len(agent.output_log)), agent.output_log, s=10)
+    plt.xlabel('Time Step')
+    plt.ylabel('Reservoir Output')
+    path = Path(DATA_PATH) / folder / 'reservoir_outputs'
     path.mkdir(parents=True, exist_ok=True)
     plt.savefig(path / f'agent_{id}.svg', format='svg')
     plt.close()
