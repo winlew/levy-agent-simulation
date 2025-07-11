@@ -1,6 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 from utils import Point, rectangle_from_points, inside_rectangle, intersect
+import networkx as nx
 
 class Agent:
     """
@@ -322,7 +323,7 @@ class Reservoir():
     A neuron is activated if exactly one of its neighbors was active at the previous time step.
     """
 
-    def __init__(self, time_steps, num_neurons=1000, burn_in_time=500, mean=0, standard_deviation=0.032):
+    def __init__(self, time_steps, num_neurons=1000, burn_in_time=500, mean=0, standard_deviation=0.032, use_small_world=False, k=10, p=0.1):
         """
         Args:
             time_steps (int): number of time steps to simulate
@@ -336,7 +337,13 @@ class Reservoir():
         self.burn_in_time = burn_in_time
         self.mean = mean
         self.standard_deviation = standard_deviation
-        self.weight_matrix = np.random.normal(self.mean, self.standard_deviation, (self.num_neurons, self.num_neurons))
+        if use_small_world:
+            G = nx.watts_strogatz_graph(num_neurons, k, p)
+            adj_matrix = nx.to_numpy_array(G)
+            weights = np.random.normal(self.mean, self.standard_deviation, (self.num_neurons, self.num_neurons))
+            self.weight_matrix = weights * adj_matrix
+        else:
+            self.weight_matrix = np.random.normal(self.mean, self.standard_deviation, (self.num_neurons, self.num_neurons))
         self.output_weights = np.random.uniform(-1, 1, self.num_neurons)
         self.burn_in_state_matrix = self.burn_in()
         self.neuron_state_time_matrix = np.zeros((self.time_steps, self.num_neurons), dtype=float)
