@@ -1,6 +1,6 @@
 {
     "agent": {
-        "population_size": 1000,
+        "population_size": 500,
         "type": "reservoir",
         "eat_radius": 0.5,
         "velocity": 1,
