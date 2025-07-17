@@ -43,7 +43,9 @@ def load_population(folder):
     population = []
     path = Path(config.DATA_PATH) / folder
     if params.agent == ReservoirAgent or params.agent == LévyAgent:
-        for file in glob.glob(str(path) + f'/log/agents/agent_*.pkl'):
+        files = sorted(glob.glob(str(path) + f'/log/agents/agent_*.pkl'), 
+               key=lambda x: int(x.split('_')[-1].split('.')[0]))
+        for file in files:
             with open(file, 'rb') as f:
                 agent = pickle.load(f)
                 population.append(agent)
