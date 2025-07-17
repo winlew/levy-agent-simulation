@@ -1,13 +1,13 @@
 {
     "agent": {
-        "population_size": 500,
+        "population_size": 50,
         "type": "reservoir",
         "eat_radius": 0.5,
         "velocity": 1,
         "mu": 2,
         "alpha": 1,
         "num_neurons": 1000,
-        "burn_in_time": 500,
+        "burn_in_time": 1000,
         "mean": 0,
         "standard_deviation": 0.032
     },
@@ -22,7 +22,7 @@
     "simulation": {
         "total_time": 999,
         "delta_t": 1,
-        "iterations": 2,
+        "iterations": 1,
         "save": true
     }
 }
