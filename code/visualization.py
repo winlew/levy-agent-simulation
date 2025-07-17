@@ -46,10 +46,11 @@ def visualize_reservoir(folder):
     for i, agent in enumerate(population):
         plot_activity(agent.model, folder, i)
         plot_eigenvalues_of_weight_matrix(agent.model, folder, i)
-        draw_reservoir_graph(agent.model, folder, i)
         plot_reservoir_outputs(agent, folder, i)
         # not worth the effort
         # plot_weights(agent.model, folder, i)
+        # draw_reservoir_graph(agent.model, folder, i)
+
 
 def update(frame, ax, env, params, data, color_dict):
     ax.cla()
@@ -187,11 +188,11 @@ def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 30,
     i = 1
     velocity = params.velocity
     dt = params.delta_t
-    if fade:
-        opacity = 1-(i-1)/number_of_traces
-    else:
-        opacity = 1
     while(frame - i >= 0 and i <= number_of_traces):
+        if fade:
+            opacity = 1-(i-1)/number_of_traces
+        else:
+            opacity = 1
         distances = np.repeat(velocity * dt, params.population_size)
         trace_matrix = np.column_stack((data.sel(timestep=frame-i)['x_position'].values, data.sel(timestep=frame-i)['y_position'].values, data.sel(timestep=frame-i+1)['direction'].values, distances))
         plot_lines(env, trace_matrix, alpha=opacity, color=color_dict["trace_color"], linewidth=0.5, ax=ax)
@@ -602,4 +603,4 @@ if __name__ == '__main__':
     # from agent import Reservoir
     # reservoir = Reservoir(10)
     # draw_reservoir_graph(reservoir, '0')
-    extract_agent_trajectory('024_small_world', 2, 45)
+    extract_agent_trajectory('0032', 1, 5)
