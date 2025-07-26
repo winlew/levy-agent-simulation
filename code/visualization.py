@@ -460,10 +460,10 @@ def plot_activity(reservoir, folder, id):
         id (int): number of the agent
     """
     _, ax = plt.subplots(figsize=(10, 5))
-    activity = np.concatenate((reservoir.burn_in_state_matrix, reservoir.neuron_state_time_matrix), axis=0)
-    im = ax.imshow(activity.T, cmap='plasma', aspect='auto', interpolation='nearest', vmin=-1, vmax=1)
+    activity = np.concatenate((reservoir.burn_in_state_matrix[:-1], reservoir.neuron_state_time_matrix), axis=0)
+    im = ax.imshow(activity.T, cmap='seismic', aspect='auto', interpolation='nearest', vmin=-1, vmax=1)
     cbar = plt.colorbar(im, ax=ax, shrink=0.9, anchor=(0.0, 0.0))
-    cbar.ax.set_xlabel(' Activity', labelpad=10)
+    cbar.ax.set_xlabel('  Activity', labelpad=10)
     ax.set_ylabel('Neuron')
     ax.set_xlabel('Time')
     burn_in_end = reservoir.burn_in_state_matrix.shape[0]
