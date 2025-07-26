@@ -499,6 +499,7 @@ def plot_eigenvalues_of_weight_matrix(reservoir, folder, id):
     plt.grid(linewidth=0.3)
     plt.xlim(-1.5 * spectral_radius, 1.5 * spectral_radius)
     plt.ylim(-1.5 * spectral_radius, 1.5 * spectral_radius)
+    plt.tight_layout()
     plt.gca().set_aspect('equal', adjustable='box')
     path = Path(DATA_PATH) / folder / 'eigenvalues'
     path.mkdir(parents=True, exist_ok=True)
