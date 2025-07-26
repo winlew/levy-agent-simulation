@@ -461,17 +461,18 @@ def plot_activity(reservoir, folder, id):
     """
     _, ax = plt.subplots(figsize=(10, 5))
     activity = np.concatenate((reservoir.burn_in_state_matrix, reservoir.neuron_state_time_matrix), axis=0)
-    im = ax.imshow(activity.T, cmap='plasma', aspect='auto')
-    cbar = plt.colorbar(im, ax=ax)
-    cbar.set_label('Activity', labelpad=10)
+    im = ax.imshow(activity.T, cmap='plasma', aspect='auto', interpolation='nearest', vmin=-1, vmax=1)
+    cbar = plt.colorbar(im, ax=ax, shrink=0.9, anchor=(0.0, 0.0))
+    cbar.ax.set_xlabel(' Activity', labelpad=10)
     ax.set_ylabel('Neuron')
     ax.set_xlabel('Time')
     burn_in_end = reservoir.burn_in_state_matrix.shape[0]
-    ax.axvline(burn_in_end, color='black', linestyle='-', linewidth=1.5, label='Burn In End')
-    plt.legend(loc='upper right', framealpha=1)
-    # ax.text(burn_in_end - 7, self.neuron_state_time_matrix.shape[1]+5, 'burn in', rotation=45, color='black', fontsize=8, va='center', ha='left')
+    ax.scatter(burn_in_end, activity.shape[1] - 0.5 + 15, marker='v', s=30, color='black', zorder=10, clip_on=False, label='Burn-in End')
+    ax.set_ylim(-0.5, activity.shape[1] - 0.5)
+    _ = ax.legend(loc='upper right', bbox_to_anchor=(1.2, 1.015), handletextpad=0.3, edgecolor=(0.5, 0.5, 0.5))
     path = Path(DATA_PATH) / folder / 'reservoir_activities'
     path.mkdir(parents=True, exist_ok=True)
+    plt.tight_layout()
     plt.savefig(path / f'agent_{id}.svg', format='svg')
     plt.close()
 
@@ -603,4 +604,8 @@ if __name__ == '__main__':
     # from agent import Reservoir
     # reservoir = Reservoir(10)
     # draw_reservoir_graph(reservoir, '0')
-    extract_agent_trajectory('0032', 1, 5)
+    # extract_agent_trajectory('0032', 1, 5)
+    sigma = 0.032
+    from agent import Reservoir
+    reservoir = Reservoir(time_steps=100, num_neurons=1000, burn_in_time=10, mean=0, standard_deviation=sigma)
+    plot_activity(reservoir, 'reservoirs', sigma)
