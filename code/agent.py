@@ -323,7 +323,7 @@ class Reservoir():
     A neuron is activated if exactly one of its neighbors was active at the previous time step.
     """
 
-    def __init__(self, time_steps, num_neurons=1000, burn_in_time=500, mean=0, standard_deviation=0.032, use_small_world=False, k=10, p=0.1):
+    def __init__(self, time_steps, num_neurons=1000, burn_in_time=1000, mean=0, standard_deviation=0.032, use_small_world=False, k=10, p=0.1):
         """
         Args:
             time_steps (int): number of time steps to simulate
@@ -355,7 +355,7 @@ class Reservoir():
         """
         burn_in_state_matrix = np.zeros((self.burn_in_time, self.num_neurons), dtype=float)
         # initialize neuron states from distribution
-        burn_in_state_matrix[0] = np.random.normal(self.mean, self.standard_deviation, self.num_neurons)
+        burn_in_state_matrix[0] = np.tanh(np.random.normal(self.mean, self.standard_deviation, self.num_neurons))
         for t in range(1, self.burn_in_time):
             burn_in_state_matrix[t] = np.tanh(np.dot(self.weight_matrix, burn_in_state_matrix[t - 1]))
         return burn_in_state_matrix
