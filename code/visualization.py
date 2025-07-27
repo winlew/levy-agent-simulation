@@ -343,7 +343,7 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.001):
     plt.bar(range(len(counts)), counts, color='blue', alpha=0.7)
     plt.title(f'Histogram of Step Lengths')
     plt.xlabel('Step Length')
-    plt.ylabel('Frequency')
+    plt.ylabel('Number of Occurences')
     path = Path(DATA_PATH) / folder 
     path.mkdir(parents=True, exist_ok=True)
     plt.tight_layout()
@@ -356,7 +356,7 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.001):
     plt.grid(True, which="both", ls="--")
     plt.title(f'Log-Binned Step Length Distribution')
     plt.xlabel('Step Length')
-    plt.ylabel('Frequency')
+    plt.ylabel('Number of Occurences')
     plt.tight_layout()
     plt.savefig(path / 'log_binned_step_length_distribution.png')
 
