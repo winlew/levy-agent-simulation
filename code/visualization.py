@@ -264,8 +264,8 @@ def get_color_dict():
     Returns a dictionary with colors from the met_brew package for the visualization.
     """
     color_palette = met_brew(name='Troy', n=8, brew_type='continuous')
-    agent_color = '#D7816A'
-    trace_color = '#93B5C6'
+    agent_color = "#C86B52"
+    trace_color = "#596f7a"
     food_color = '#000000'
     color_dict = {"food_color": food_color,
                   "agent_color": agent_color,
