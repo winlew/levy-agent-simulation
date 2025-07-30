@@ -99,31 +99,63 @@ def animate_single_iteration(i, environment, params, data, folder_name, tqdm_pos
         ani.save(filename=data_path / f'animation_{i+1}.gif', writer="pillow")
 
 def render_state(ax, data, env, color_dict, params, frame):
-    plotWall(env, ax, color_dict)
-    plotFood(env, ax, color_dict)
+    plot_wall(env, ax, color_dict)
+    plot_food(env, ax, color_dict)
     # plot agent eat patches
     eat_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, params.population_size), data['ate'].values[frame]))
-    plotFilledPatches(env, eat_matrix.transpose(), alpha=0.5, color=color_dict["agent_color"], ax=ax)
+    plot_circles(env, eat_matrix.transpose(), alpha=0.5, color_dict=color_dict, ax=ax, multi_color=params.population_size == 10)
     # plot agent directions (the noses that show the direction the agents are heading)
     if frame != 0:
         direction_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['direction'].values, np.repeat(params.eat_radius*2, params.population_size)))
-        plot_lines(env, direction_matrix.transpose(), alpha=1, color=color_dict["agent_color"], linewidth=1, ax=ax)
+        plot_lines(env, direction_matrix.transpose(), alpha=1, color_dict=color_dict, linewidth=1, ax=ax, multi_color=params.population_size == 10, plot_nozzles=True)
 
-def plotWall(env, ax, color_dict):
+def plot_wall(env, ax, color_dict):
     for wall in env.walls:
-        ax.plot([wall[0][0], wall[1][0]], [wall[0][1], wall[1][1]], color=color_dict["food_color"], linewidth=2)
+        ax.plot([wall[0][0], wall[1][0]], [wall[0][1], wall[1][1]], color=color_dict["wall_color"], linewidth=2)
 
-def plotFood(env, ax, color_dict, particle_scale=1):
+def plot_food(env, ax, color_dict, particle_scale=1):
     if len(env.food_positions) > 0:
         ax.scatter(env.food_positions[:,0], env.food_positions[:,1], color=color_dict["food_color"], label='Food', s=2**particle_scale)
 
-def plotFilledPatches(env, data_matrix, alpha, color, ax):
-    # data_matrix = (N,3) with data_matrix[i] = [x_i,y_i,radius_i]
-    original_color = color
+def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 60, fade = True):
+    """
+    Plot the agent traces for the last `number_of_traces` time steps.
+    Set 'number_of_traces' to params.simulation_steps to plot all traces.    
+    """
+    i = 1
+    velocity = params.velocity
+    dt = params.delta_t
+    while(frame - i >= 0 and i <= number_of_traces):
+        if fade:
+            opacity = 1-(i-1)/number_of_traces
+        else:
+            opacity = 1
+        distances = np.repeat(velocity * dt, params.population_size)
+        trace_matrix = np.column_stack((data.sel(timestep=frame-i)['x_position'].values, data.sel(timestep=frame-i)['y_position'].values, data.sel(timestep=frame-i+1)['direction'].values, distances))
+        plot_lines(env, trace_matrix, alpha=opacity, color_dict=color_dict, linewidth=0.5, ax=ax, multi_color=params.population_size == 10, plot_nozzles=False)
+        i += 1
+
+def plot_circles(env, data_matrix, alpha, color_dict, ax, multi_color):
+    """
+    Plots circles for the agents bodies.
+
+    Args:
+        env (Environment): the environment in which the agents are located
+        data_matrix (np.ndarray): a matrix with shape (N,3) where N is the number of agents and each row contains x, y and agent radius
+        alpha (float): transparency of the circles
+        color (str or list): color of the circles, can be a single color or a list of colors for each agent
+    """
+
     # create 50 points along circles circumference
     theta = np.linspace(0, 2*np.pi, 50)
 
-    for i,row in enumerate(data_matrix):
+    for i, row in enumerate(data_matrix):
+
+        if multi_color:
+            original_color = color_dict['multi_color'][i]
+        else:
+            original_color = color_dict['agent_color']
+
         x = row[0]
         y = row[1]
         r = row[2]
@@ -131,9 +163,9 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
         # plot the number of the agent inside the circle
         ax.text(x, y, str(i), fontsize=8, ha='center', va='center')
 
-        # if there are even 4 rows
+        # 4th row has information about whether agent ate
         if len(row) == 4 and row[3] != 0:
-            color = 'red'
+            color = color_dict['eat_color']
         else:
             color = original_color
 
@@ -179,37 +211,20 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
         if y+r>env.size: 
             ys = y-env.size + r * np.sin(theta)
             ax.fill(xn, ys, color=color, alpha=alpha)
-
-def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 60, fade=True):
-    """
-    Plot the agent traces for the last `number_of_traces` time steps.
-    Set 'number_of_traces' to params.simulation_steps to plot all traces.    
-    """
-    i = 1
-    velocity = params.velocity
-    dt = params.delta_t
-    while(frame - i >= 0 and i <= number_of_traces):
-        if fade:
-            opacity = 1-(i-1)/number_of_traces
-        else:
-            opacity = 1
-        distances = np.repeat(velocity * dt, params.population_size)
-        trace_matrix = np.column_stack((data.sel(timestep=frame-i)['x_position'].values, data.sel(timestep=frame-i)['y_position'].values, data.sel(timestep=frame-i+1)['direction'].values, distances))
-        plot_lines(env, trace_matrix, alpha=opacity, color=color_dict["trace_color"], linewidth=0.5, ax=ax)
-        i += 1
    
-def plot_lines(env, data_matrix, alpha, color, linewidth, ax):
-    # data_matrix = (N,4) with data_matrix[i] = [x_i,y_i,dir_i,len_i]
-    
-    # Check if for each line a color is defined
-    multi_colors = False
-    if not isinstance(color, (str, np.str_)):
-        # If not enough colors given, take first color
-        if len(color) != len(data_matrix):
-            color = color[0]
-        else:
-            multi_colors = True
-            colors = color
+def plot_lines(env, data_matrix, alpha, color_dict, linewidth, ax, multi_color, plot_nozzles=True):
+    """
+    Plots lines for the agents directions.
+    Args:
+        env (Environment): the environment in which the agents are located
+        data_matrix (np.ndarray): a matrix with shape (N,4) where N is the number of agents and each row contains x, y, direction and length
+        alpha (float): transparency of the lines
+        color_dict (dict): a dictionary of colors
+        linewidth (float): width of the lines
+        ax (matplotlib.axes.Axes): the axes to plot on
+        multi_color (bool): whether to use different colors for each agent
+        plot_nozzles (bool): whether to plot the nozzles of the agents
+    """
 
     for i, row in enumerate(data_matrix):
         x = row[0]
@@ -217,9 +232,13 @@ def plot_lines(env, data_matrix, alpha, color, linewidth, ax):
         direction = row[2]
         length = row[3]
 
-        if multi_colors:
-            color = colors[i]
-
+        if multi_color:
+            color = color_dict['multi_color'][i]
+        elif plot_nozzles:
+            color = color_dict['agent_color']
+        else:
+            color = color_dict['trace_color']
+        
         # Normal part
         xn = np.linspace(x,x+np.cos(direction)*length,10)
         yn = np.linspace(y,y+np.sin(direction)*length,10)
@@ -261,15 +280,21 @@ def plot_lines(env, data_matrix, alpha, color, linewidth, ax):
 
 def get_color_dict():
     """
-    Returns a dictionary with colors from the met_brew package for the visualization.
+    Returns a dictionary with colors.
     """
-    color_palette = met_brew(name='Troy', n=8, brew_type='continuous')
     agent_color = "#C86B52"
     trace_color = "#596f7a"
+    wall_color = "#434343"
     food_color = '#000000'
+    eat_color = "#000000"
+    cmap = plt.get_cmap('tab10')
+    multi_color = [cmap(i % 10) for i in range(10)]
     color_dict = {"food_color": food_color,
                   "agent_color": agent_color,
-                  "trace_color": trace_color}
+                  "trace_color": trace_color,
+                  "wall_color": wall_color,
+                  "eat_color": eat_color,
+                  "multi_color": multi_color}
     return color_dict
 
 # function to show environment and agents at a given time step
@@ -284,7 +309,7 @@ def visualize_state(environment, agents):
     ax.set_ylabel('Y', fontsize=20)
     ax.set_title(f'Simulation Environment', fontsize=15)
     color_dict = get_color_dict()
-    plotFood(environment, ax, color_dict)
+    plot_food(environment, ax, color_dict)
     if agents is not None:
         N = len(agents)
         eat_matrix = np.zeros((N,3))
@@ -294,10 +319,9 @@ def visualize_state(environment, agents):
             direction_matrix[agent_idx] = [agent.position[0],agent.position[1],agent.direction,agent.eat_radius*2]
     
         # Plot agent eat patches
-        plotFilledPatches(environment,eat_matrix, alpha=0.5, color=color_dict["agent_color"], ax=ax)
+        plot_circles(environment, eat_matrix.transpose(), alpha=0.6, color_dict=color_dict, ax=ax, multi_color=False)
         # Plot agent directions
-        plot_lines(environment,direction_matrix, alpha=1, color=color_dict["agent_color"], linewidth=1, ax=ax)
-    # plt.show()
+        plot_lines(environment, direction_matrix, alpha=1, color_dict=color_dict, linewidth=0.5, ax=ax, multi_color=False, plot_nozzles=False)
     return ax
 
 def plot_step_length_distribution_of_agents(folder, tolerance=0.001):
