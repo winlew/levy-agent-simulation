@@ -323,7 +323,7 @@ class Reservoir():
     A neuron is activated if exactly one of its neighbors was active at the previous time step.
     """
 
-    def __init__(self, time_steps, num_neurons=1000, burn_in_time=1000, mean=0, standard_deviation=0.032, use_small_world=False, k=10, p=0.1):
+    def __init__(self, time_steps, num_neurons=1000, burn_in_time=1000, mean=0, standard_deviation=0.032, use_small_world=False, k=10, p=0.1, use_modular_network=False):
         """
         Args:
             time_steps (int): number of time steps to simulate
@@ -339,6 +339,11 @@ class Reservoir():
         self.standard_deviation = standard_deviation
         if use_small_world:
             G = nx.watts_strogatz_graph(num_neurons, k, p)
+            adj_matrix = nx.to_numpy_array(G)
+            weights = np.random.normal(self.mean, self.standard_deviation, (self.num_neurons, self.num_neurons))
+            self.weight_matrix = weights * adj_matrix
+        elif use_modular_network:
+            G = nx.barabasi_albert_graph(num_neurons, k)
             adj_matrix = nx.to_numpy_array(G)
             weights = np.random.normal(self.mean, self.standard_deviation, (self.num_neurons, self.num_neurons))
             self.weight_matrix = weights * adj_matrix
