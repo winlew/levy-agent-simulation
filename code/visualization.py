@@ -117,7 +117,7 @@ def plot_food(env, ax, color_dict, particle_scale=1):
     if len(env.food_positions) > 0:
         ax.scatter(env.food_positions[:,0], env.food_positions[:,1], color=color_dict["food_color"], label='Food', s=2**particle_scale)
 
-def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 60, fade = True):
+def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 70, fade = True):
     """
     Plot the agent traces for the last `number_of_traces` time steps.
     Set 'number_of_traces' to params.simulation_steps to plot all traces.    
