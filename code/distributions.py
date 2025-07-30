@@ -22,12 +22,12 @@ plt.rcParams.update({
 blues = cm.Blues(np.linspace(0.4, 0.8, len(mu_values)))
 for mu, color in zip(mu_values, blues):
     power = 1 / x**(1 / (mu - 1))
-    plt.plot(x, power, color=color, label=f"Power Law (α={mu:.2f})")
+    plt.plot(x, power, color=color, label=f"Power Law (μ={mu:.2f})")
 
 reds = cm.Reds(np.linspace(0.4, 0.8, len(alpha_values)))
 for alpha, color in zip(alpha_values, reds):
     exp = -np.log(x) / alpha + 1
-    plt.plot(x, exp, color=color, label=f"Exponential (λ={alpha})")
+    plt.plot(x, exp, color=color, label=f"Exponential (α={alpha})")
 
 gauss = norm.ppf(1 - x / 2) + 1
 plt.plot(x, gauss, color='green', label="Gaussian")
