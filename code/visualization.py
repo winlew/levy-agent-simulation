@@ -60,7 +60,7 @@ def update(frame, ax, env, params, data, color_dict):
     ax.set_yticks([0,env.size])
     ax.set_xlabel('X', fontsize=20)
     ax.set_ylabel('Y', fontsize=20)
-    ax.set_title(f"Simulation Environment || t={frame}/{len(data.coords['timestep'])}")
+    ax.set_title(f"t={frame}/{len(data.coords['timestep'])}")
     render_state(ax, data, env, color_dict, params, frame)
     plot_traces(ax, env, params, data, frame, color_dict)
 
@@ -85,7 +85,7 @@ def animate_single_iteration(i, environment, params, data, folder_name, tqdm_pos
     ax.set_yticks([0, environment.size])
     ax.set_xlabel('X', fontsize = 20)
     ax.set_ylabel('Y', fontsize = 20)
-    ax.set_title(f"Simulation Environment || t=0/{len(data.coords['timestep'])}")
+    ax.set_title(f"t=0/{len(data.coords['timestep'])}")
 
     render_state(ax, iteration_data, environment, color_dict, params, 0)
 
@@ -180,7 +180,7 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
             ys = y-env.size + r * np.sin(theta)
             ax.fill(xn, ys, color=color, alpha=alpha)
 
-def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 30, fade=True):
+def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 70, fade=True):
     """
     Plot the agent traces for the last `number_of_traces` time steps.
     Set 'number_of_traces' to params.simulation_steps to plot all traces.    
@@ -459,23 +459,25 @@ def plot_activity(reservoir, folder, id):
         folder (str): where to store the plot
         id (int): number of the agent
     """
+    plt.rcParams.update({'font.size': 16})
     _, ax = plt.subplots(figsize=(10, 5))
     activity = np.concatenate((reservoir.burn_in_state_matrix[:-1], reservoir.neuron_state_time_matrix), axis=0)
     im = ax.imshow(activity.T, cmap='seismic', aspect='auto', interpolation='nearest', vmin=-1, vmax=1)
-    cbar = plt.colorbar(im, ax=ax, shrink=0.9, anchor=(0.0, 0.0))
-    cbar.ax.set_xlabel('  Activity', labelpad=10)
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.ax.set_ylabel('Activity', labelpad=5, rotation=90, loc='center')
+    cbar.ax.yaxis.set_label_position('left')
     ax.set_ylabel('Neuron')
     ax.set_xlabel('Time')
     burn_in_end = reservoir.burn_in_state_matrix.shape[0]
     ax.scatter(burn_in_end, activity.shape[1] - 0.5 + 15, marker='v', s=30, color='black', zorder=10, clip_on=False, label='Burn-in End')
     ax.set_ylim(-0.5, activity.shape[1] - 0.5)
-    _ = ax.legend(loc='upper right', bbox_to_anchor=(1.2, 1.015), handletextpad=0.3, edgecolor=(0.5, 0.5, 0.5))
     path = Path(DATA_PATH) / folder / 'reservoir_activities'
     path.mkdir(parents=True, exist_ok=True)
     plt.tight_layout()
     plt.savefig(path / f'agent_{id}.svg', format='svg')
     plt.close()
 
+# TODO there is a newer function in the study to calculate them
 def plot_eigenvalues_of_weight_matrix(reservoir, folder, id):
     """
     Plot the eigenvalues of the weight matrix in the complex plane.
@@ -515,6 +517,7 @@ def plot_reservoir_outputs(agent, folder, id):
         folder (str): where to store the plot
         id (int): number of the agent
     """
+    plt.rcParams.update({'font.size': 16})
     plt.figure(figsize=(15, 5))
     plt.scatter(range(len(agent.output_log)), agent.output_log, s=10)
     plt.xlabel('Time Step')
@@ -522,6 +525,7 @@ def plot_reservoir_outputs(agent, folder, id):
     path = Path(DATA_PATH) / folder / 'reservoir_outputs'
     path.mkdir(parents=True, exist_ok=True)
     plt.savefig(path / f'agent_{id}.svg', format='svg')
+    plt.tight_layout()
     plt.close()
 
 # TODO has to get a rework
