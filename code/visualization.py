@@ -180,7 +180,7 @@ def plotFilledPatches(env, data_matrix, alpha, color, ax):
             ys = y-env.size + r * np.sin(theta)
             ax.fill(xn, ys, color=color, alpha=alpha)
 
-def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 70, fade=True):
+def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 60, fade=True):
     """
     Plot the agent traces for the last `number_of_traces` time steps.
     Set 'number_of_traces' to params.simulation_steps to plot all traces.    
@@ -493,7 +493,7 @@ def plot_eigenvalues_of_weight_matrix(reservoir, folder, id):
     plt.scatter(eigenvalues.real, eigenvalues.imag, s=10)
     plt.xlabel(r'$\mathrm{Re}(\lambda)$')
     plt.ylabel(r'$\mathrm{Im}(\lambda)$')
-    plt.title(f'Eigenvalues of the Connectivity Matrix (Spectral Radius: {spectral_radius:.3f})')
+    plt.text(0.95, 0.95, f'$\\rho = {spectral_radius:.3f}$', ha='right', va='top', transform=plt.gca().transAxes, bbox=dict(boxstyle='round,pad=0.2', fc='white', ec='gray', lw=0.5))
     plt.axhline(0, color='black', lw=0.2, ls='--')
     plt.axvline(0, color='black', lw=0.2, ls='--')
     circle = plt.Circle((0, 0), spectral_radius, color='grey', ls='--', fill=False, lw=1)
