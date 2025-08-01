@@ -10,6 +10,7 @@ from PIL import Image
 import os
 import shutil
 import imageio
+import json
 
 def save_population(population, folder):
     """
@@ -94,7 +95,23 @@ def update_data(data, iteration, trajectory_log):
     data["direction"].loc[iteration, :, :] = trajectory_log[:, :, 2]
     data["ate"].loc[iteration, :, :] = trajectory_log[:, :, 3]
 
-def save_simulation_context(folder, environment, params):
+def extract_agents(folder, agent_indexes):
+    """
+    Trim the data to only contain the selected agents and safe it in a new folder.
+    """
+    safe_folder = f"{folder}_{len(agent_indexes)}_extracted"
+    data, environment, _ = load_data(folder)
+    trimmed_data = data.isel(agent=agent_indexes)
+    save_simulation_context(safe_folder, environment)
+    save_data(safe_folder, trimmed_data, None)
+    params_file = config.DATA_PATH / safe_folder / 'parameters.json'
+    with open(params_file, 'r') as f:
+        params_dict = json.load(f)
+    params_dict['agent']['population_size'] = len(agent_indexes)
+    with open(params_file, 'w') as f:
+        json.dump(params_dict, f, indent=2)
+    
+def save_simulation_context(folder, environment):
     """
     Saves the immutable settings:
     - the environment
@@ -103,7 +120,6 @@ def save_simulation_context(folder, environment, params):
     Args:
         folder (str): folder to save the simulation context in
         environment (Environment): environment of the simulation
-        params (Params): parameters of the simulation
     """
     folder_path = config.DATA_PATH / folder
     folder_path.mkdir(parents=True, exist_ok=True)
