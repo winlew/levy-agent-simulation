@@ -37,4 +37,4 @@ axs[1].scatter(carrying_capacity, 0, color="#646464", edgecolor='black', s=45, l
 axs[1].legend(handletextpad=0.2)
 
 plt.tight_layout()
-plt.savefig(Path(__file__).parent.parent / 'resources/logistic_growth.svg', format='svg')
+plt.savefig(Path(__file__).parent.parent / 'resources/logistic_growth.pdf', format='pdf')
