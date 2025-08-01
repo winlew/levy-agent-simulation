@@ -22,3 +22,11 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    # from visualization import draw_frame_in_high_resolution
+    # draw_frame_in_high_resolution('00', 50, 0)
+
+    # folder = '003130_Popular'
+    # from data_io import extract_agents
+    # extracted_folder = extract_agents(folder, [9,11,2,40,48,3,21,18,17,41]) #26
+    # visualize(extracted_folder)
