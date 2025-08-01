@@ -110,6 +110,7 @@ def extract_agents(folder, agent_indexes):
     params_dict['agent']['population_size'] = len(agent_indexes)
     with open(params_file, 'w') as f:
         json.dump(params_dict, f, indent=2)
+    return safe_folder
     
 def save_simulation_context(folder, environment):
     """
