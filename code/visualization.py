@@ -99,6 +99,9 @@ def animate_single_iteration(i, environment, params, data, folder_name, tqdm_pos
         ani.save(filename=data_path / f'animation_{i+1}.gif', writer="pillow")
 
 def render_state(ax, data, env, color_dict, params, frame):
+    """
+    Populate a single time frame from a simulation with walls, food and agents.
+    """
     plot_wall(env, ax, color_dict)
     plot_food(env, ax, color_dict)
     # plot agent eat patches
@@ -108,6 +111,23 @@ def render_state(ax, data, env, color_dict, params, frame):
     if frame != 0:
         direction_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['direction'].values, np.repeat(params.eat_radius*2, params.population_size)))
         plot_lines(env, direction_matrix.transpose(), alpha=1, color_dict=color_dict, linewidth=1, ax=ax, multi_color=params.population_size == 10, plot_nozzles=True)
+
+def extract_high_resolution_frame(folder, frame, iteration):
+    """
+    Plot a frame in high quality from a given simulation.
+
+    Args:
+        folder (string): where the simulation data is saved
+        frame (int): the timestep to be extracted
+        iteration (int): which iteration to extract from (starting from 0)
+    """
+    data, environment, params = load_data(folder)
+    iteration_data = data.sel(iteration=iteration)
+    color_dict = get_color_dict()
+    plt.rcParams.update({'font.size': 14})
+    fig, ax = plt.subplots(figsize = (10, 10))
+    update(frame, ax, environment, params, iteration_data, color_dict)
+    plt.savefig(config.DATA_PATH / f'{folder}/frame_{frame}.pdf', format='pdf')
 
 def plot_wall(env, ax, color_dict):
     for wall in env.walls:
@@ -297,8 +317,10 @@ def get_color_dict():
                   "multi_color": multi_color}
     return color_dict
 
-# function to show environment and agents at a given time step
 def visualize_state(environment, agents):
+    """
+    Show agents in environment.
+    """
     plt.rcParams.update({'font.size': 14})
     fig, ax = plt.subplots(1, 1, figsize=(10,10))
     ax.set_xlim(0, environment.size)
@@ -315,9 +337,8 @@ def visualize_state(environment, agents):
         eat_matrix = np.zeros((N,3))
         direction_matrix = np.zeros((N,4))
         for agent_idx,agent in enumerate(agents):
-            eat_matrix[agent_idx] = [agent.position[0],agent.position[1],agent.eat_radius]
-            direction_matrix[agent_idx] = [agent.position[0],agent.position[1],agent.direction,agent.eat_radius*2]
-    
+            eat_matrix[agent_idx] = [agent.position[0], agent.position[1], agent.eat_radius]
+            direction_matrix[agent_idx] = [agent.position[0], agent.position[1], agent.direction, agent.eat_radius*2]
         # Plot agent eat patches
         plot_circles(environment, eat_matrix.transpose(), alpha=0.6, color_dict=color_dict, ax=ax, multi_color=False)
         # Plot agent directions
@@ -359,7 +380,7 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.001):
     else:
         raise ValueError(f"This function is not implemented for {params.agent}.")
 
-    if ballistic_movement_detected:
+    if ballistic_movement_detected or step_lengths.size == 0:
         return
     
     counts = np.bincount(step_lengths.astype(int))
@@ -384,6 +405,7 @@ def plot_step_length_distribution_of_agents(folder, tolerance=0.001):
     plt.tight_layout()
     plt.savefig(path / 'log_binned_step_length_distribution.png')
 
+# TODO function has errors
 def extract_agent_trajectory(folder, iteration, agent_number, buffer = 5):
     """
     Isolate the trajectory of a certain agent in an empty environment.
