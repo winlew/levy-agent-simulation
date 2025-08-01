@@ -61,8 +61,8 @@ def update(frame, ax, env, params, data, color_dict):
     ax.set_xlabel('X', fontsize=20)
     ax.set_ylabel('Y', fontsize=20)
     ax.set_title(f"t={frame}/{len(data.coords['timestep'])}")
-    render_state(ax, data, env, color_dict, params, frame)
     plot_traces(ax, env, params, data, frame, color_dict)
+    render_state(ax, data, env, color_dict, params, frame)
 
 def animate(environment, params, data, folder_name=None):
     with mp.Manager() as manager:
@@ -104,13 +104,15 @@ def render_state(ax, data, env, color_dict, params, frame):
     """
     plot_wall(env, ax, color_dict)
     plot_food(env, ax, color_dict)
-    # plot agent eat patches
+    # plot agent bodies
     eat_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, np.repeat(params.eat_radius, params.population_size), data['ate'].values[frame]))
-    plot_circles(env, eat_matrix.transpose(), alpha=0.5, color_dict=color_dict, ax=ax, multi_color=params.population_size == 10)
+    plot_circles(env, eat_matrix.transpose(), alpha=0.7, color_dict=color_dict, ax=ax, multi_color=params.population_size == 10)
     # plot agent directions (the noses that show the direction the agents are heading)
     if frame != 0:
-        direction_matrix = np.vstack((data.sel(timestep=frame)['x_position'].values, data.sel(timestep=frame)['y_position'].values, data.sel(timestep=frame)['direction'].values, np.repeat(params.eat_radius*2, params.population_size)))
-        plot_lines(env, direction_matrix.transpose(), alpha=1, color_dict=color_dict, linewidth=1, ax=ax, multi_color=params.population_size == 10, plot_nozzles=True)
+        x_nozzle_positions = data.sel(timestep=frame)['x_position'].values + np.cos(data.sel(timestep=frame)['direction'].values) * params.eat_radius
+        y_nozzle_positions = data.sel(timestep=frame)['y_position'].values + np.sin(data.sel(timestep=frame)['direction'].values) * params.eat_radius
+        direction_matrix = np.vstack((x_nozzle_positions, y_nozzle_positions, data.sel(timestep=frame)['direction'].values, np.repeat(params.eat_radius/2, params.population_size)))
+        plot_lines(env, direction_matrix.transpose(), alpha=0.7, color_dict=color_dict, linewidth=1, ax=ax, multi_color=params.population_size == 10, plot_nozzles=True)
 
 def extract_high_resolution_frame(folder, frame, iteration):
     """
@@ -185,7 +187,7 @@ def plot_circles(env, data_matrix, alpha, color_dict, ax, multi_color):
         r = row[2]
 
         # plot the number of the agent inside the circle
-        ax.text(x, y, str(i), fontsize=8, ha='center', va='center')
+        ax.text(x, y, str(i), fontsize=7, ha='center', va='center', zorder=4)
 
         # 4th row has information about whether agent ate
         if len(row) == 4 and row[3] != 0:
@@ -196,45 +198,45 @@ def plot_circles(env, data_matrix, alpha, color_dict, ax, multi_color):
         # Normal part
         xn = x + r * np.cos(theta)
         yn = y + r * np.sin(theta)
-        ax.fill(xn, yn, color=color, alpha=alpha)
+        ax.fill(xn, yn, color=color, alpha=alpha, zorder=3, edgecolor='none', linewidth=0)
 
         ### Parts crossing the boundary
         # Overlap with left border?
         if x-r<0: 
             xs = x+env.size + r * np.cos(theta)
-            ax.fill(xs, yn, color=color, alpha=alpha)
+            ax.fill(xs, yn, color=color, alpha=alpha, zorder=3, edgecolor='none', linewidth=0)
             # In lower corner?
             if y-r<0:
                 xs = x+env.size + r * np.cos(theta)
                 ys = y+env.size + r * np.sin(theta)
-                plt.fill(xs, ys, color=color, alpha=alpha)
+                plt.fill(xs, ys, color=color, alpha=alpha, zorder=3, edgecolor='none', linewidth=0)
             # In upper corner?
             if y+r>env.size:  
                 xs = x+env.size + r * np.cos(theta)
                 ys = y-env.size + r * np.sin(theta)
-                ax.fill(xs, ys, color=color, alpha=alpha)
+                ax.fill(xs, ys, color=color, alpha=alpha, zorder=3, edgecolor='none', linewidth=0)
         # Overlap with right border?
         if x+r>env.size: 
             xs = x-env.size + r * np.cos(theta)
-            ax.fill(xs, yn, color=color, alpha=alpha)
+            ax.fill(xs, yn, color=color, alpha=alpha, zorder=3, edgecolor='none', linewidth=0)
             # In lower corner?
             if y-r<0:
                 xs = x-env.size + r * np.cos(theta)
                 ys = y+env.size + r * np.sin(theta)
-                ax.fill(xs, ys, color=color, alpha=alpha)
+                ax.fill(xs, ys, color=color, alpha=alpha, zorder=3, edgecolor='none', linewidth=0)
             # In upper corner?
             if y+r>env.size:  
                 xs = x-env.size + r * np.cos(theta)
                 ys = y-env.size + r * np.sin(theta)
-                ax.fill(xs, ys, color=color, alpha=alpha)
+                ax.fill(xs, ys, color=color, alpha=alpha, zorder=3, edgecolor='none', linewidth=0)
         # Overlap with lower border?
         if y-r<0: 
             ys = y+env.size + r * np.sin(theta)
-            ax.fill(xn, ys, color=color, alpha=alpha)
+            ax.fill(xn, ys, color=color, alpha=alpha, zorder=3, edgecolor='none', linewidth=0)
         # Overlap with upper border?
         if y+r>env.size: 
             ys = y-env.size + r * np.sin(theta)
-            ax.fill(xn, ys, color=color, alpha=alpha)
+            ax.fill(xn, ys, color=color, alpha=alpha, zorder=3, edgecolor='none', linewidth=0)
    
 def plot_lines(env, data_matrix, alpha, color_dict, linewidth, ax, multi_color, plot_nozzles=True):
     """
@@ -266,47 +268,47 @@ def plot_lines(env, data_matrix, alpha, color_dict, linewidth, ax, multi_color, 
         # Normal part
         xn = np.linspace(x,x+np.cos(direction)*length,10)
         yn = np.linspace(y,y+np.sin(direction)*length,10)
-        ax.plot(xn,yn,color=color, alpha=alpha, linewidth=linewidth)
+        ax.plot(xn,yn,color=color, alpha=alpha, linewidth=linewidth, zorder=1)
 
         ### Parts crossing the boundary
         # Overlap with left border?
         if x+np.cos(direction)*length<0: 
             xs = np.linspace(x+env.size, x+env.size+np.cos(direction)*length,10)
-            ax.plot(xs,yn,color=color, alpha=alpha, linewidth=linewidth)
+            ax.plot(xs,yn,color=color, alpha=alpha, linewidth=linewidth, zorder=1)
             # In lower corner?
             if y+np.sin(direction)*length<0:
                 ys = np.linspace(y+env.size, y+env.size+np.sin(direction)*length,10)
-                ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth)
+                ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth, zorder=1)
             # In upper corner?
             if y+np.sin(direction)*length>env.size:  
                 ys = np.linspace(y-env.size, y-env.size+np.sin(direction)*length,10)
-                ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth)
+                ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth, zorder=1)
         # Overlap with right border?
         if x+np.cos(direction)*length>env.size:
             xs = np.linspace(x-env.size, x-env.size+np.cos(direction)*length,10)
-            ax.plot(xs,yn,color=color, alpha=alpha, linewidth=linewidth)
+            ax.plot(xs,yn,color=color, alpha=alpha, linewidth=linewidth, zorder=1)
             # In lower corner?
             if y+np.sin(direction)*length<0:
                 ys = np.linspace(y+env.size, y+env.size+np.sin(direction)*length,10)
-                ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth)
+                ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth, zorder=1)
             # In upper corner?
             if y+np.sin(direction)*length>env.size:  
                 ys = np.linspace(y-env.size, y-env.size+np.sin(direction)*length,10)
-                ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth)
+                ax.plot(xs,ys,color=color, alpha=alpha, linewidth=linewidth, zorder=1)
         # Overlap with lower border?
         if y+np.sin(direction)*length<0: 
             ys = np.linspace(y+env.size, y+env.size+np.sin(direction)*length,10)
-            ax.plot(xn,ys,color=color, alpha=alpha, linewidth=linewidth)
+            ax.plot(xn,ys,color=color, alpha=alpha, linewidth=linewidth, zorder=1)
         # Overlap with upper border?
         if y+np.sin(direction)*length>env.size: 
             ys = np.linspace(y-env.size, y-env.size+np.sin(direction)*length,10)
-            ax.plot(xn,ys,color=color, alpha=alpha, linewidth=linewidth)
+            ax.plot(xn,ys,color=color, alpha=alpha, linewidth=linewidth, zorder=1)
 
 def get_color_dict():
     """
     Returns a dictionary with colors.
     """
-    agent_color = "#C86B52"
+    agent_color = "#E6785A"
     trace_color = "#596f7a"
     wall_color = "#434343"
     food_color = '#000000'
