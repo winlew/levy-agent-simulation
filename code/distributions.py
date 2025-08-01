@@ -8,7 +8,7 @@ from pathlib import Path
 from config import LATEX_TEXTWIDTH
 
 x = np.linspace(1e-15, 0.9999, 1000)
-mu_values = [1.01, 1.7, 3]
+mu_values = [1.01, 2, 3]
 alpha_values = [0.01, 0.3, 1]
 
 plt.figure(figsize=(LATEX_TEXTWIDTH, LATEX_TEXTWIDTH))
@@ -36,7 +36,6 @@ plt.yticks(range(1, 10))
 plt.grid(linewidth=0.3)
 plt.xlabel('$u$')
 plt.ylabel("Step Length")
-plt.legend()
+plt.legend(loc='upper center')
 plt.tight_layout()
 plt.savefig(Path(__file__).parent.parent / 'resources/distributions.pdf', format='pdf')
-plt.show()
