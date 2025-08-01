@@ -8,7 +8,7 @@ import config
 import multiprocessing as mp
 from agent import ReservoirAgent, LévyAgent
 from data_io import load_data, load_population, extract_gif_frames
-from config import DATA_PATH
+from config import DATA_PATH, LATEX_TEXTWIDTH
 from environment import Environment
 from parameters import Params
 from matplotlib.animation import FuncAnimation
@@ -512,25 +512,28 @@ def plot_activity(reservoir, folder, id):
         folder (str): where to store the plot
         id (int): number of the agent
     """
-    plt.rcParams.update({'font.size': 16})
-    _, ax = plt.subplots(figsize=(10, 5))
+    plt.rcParams.update({
+        "text.usetex": True,
+        "font.size": 10,
+        "font.family": "serif"
+    })
+    _, ax = plt.subplots(figsize=(LATEX_TEXTWIDTH, LATEX_TEXTWIDTH/2))
     activity = np.concatenate((reservoir.burn_in_state_matrix[:-1], reservoir.neuron_state_time_matrix), axis=0)
     im = ax.imshow(activity.T, cmap='seismic', aspect='auto', interpolation='nearest', vmin=-1, vmax=1)
     cbar = plt.colorbar(im, ax=ax)
-    cbar.ax.set_ylabel('Activity', labelpad=5, rotation=90, loc='center')
+    cbar.ax.set_ylabel('Activity', labelpad=3, rotation=90, loc='center')
     cbar.ax.yaxis.set_label_position('left')
     ax.set_ylabel('Neuron')
     ax.set_xlabel('Time')
     burn_in_end = reservoir.burn_in_state_matrix.shape[0]
-    ax.scatter(burn_in_end, activity.shape[1] - 0.5 + 15, marker='v', s=30, color='black', zorder=10, clip_on=False, label='Burn-in End')
+    ax.scatter(burn_in_end, activity.shape[1] - 0.5 + 35, marker='v', s=30, color='black', zorder=10, clip_on=False, label='Burn-in End')
     ax.set_ylim(-0.5, activity.shape[1] - 0.5)
     path = Path(DATA_PATH) / folder / 'reservoir_activities'
     path.mkdir(parents=True, exist_ok=True)
     plt.tight_layout()
-    plt.savefig(path / f'agent_{id}.svg', format='svg')
+    plt.savefig(path / f'agent_{id}.pdf', format='pdf', bbox_inches='tight')
     plt.close()
 
-# TODO there is a newer function in the study to calculate them
 def plot_eigenvalues_of_weight_matrix(reservoir, folder, id):
     """
     Plot the eigenvalues of the weight matrix in the complex plane.
@@ -540,25 +543,33 @@ def plot_eigenvalues_of_weight_matrix(reservoir, folder, id):
         folder (str): where to store the plot
         id (int): number of the agent
     """
+    plt.rcParams.update({
+        "text.usetex": True,
+        "font.size": 10,
+        "font.family": "serif"
+    })
     eigenvalues, _ = np.linalg.eig(reservoir.weight_matrix)
     spectral_radius = max(abs(eigenvalues))
-    plt.figure(figsize=(8, 8))
-    plt.scatter(eigenvalues.real, eigenvalues.imag, s=10)
-    plt.xlabel(r'$\mathrm{Re}(\lambda)$')
-    plt.ylabel(r'$\mathrm{Im}(\lambda)$')
-    plt.text(0.95, 0.95, f'$\\rho = {spectral_radius:.3f}$', ha='right', va='top', transform=plt.gca().transAxes, bbox=dict(boxstyle='round,pad=0.2', fc='white', ec='gray', lw=0.5))
-    plt.axhline(0, color='black', lw=0.2, ls='--')
-    plt.axvline(0, color='black', lw=0.2, ls='--')
-    circle = plt.Circle((0, 0), spectral_radius, color='grey', ls='--', fill=False, lw=1)
+    plt.figure(figsize=(LATEX_TEXTWIDTH/2, LATEX_TEXTWIDTH/2))
+    plt.xlabel('$\mathrm{Re}(\lambda)$')
+    plt.ylabel('$\mathrm{Im}(\lambda)$')
+    plt.axhline(1, color='lightgray', lw=0.5, alpha=0.8)
+    plt.axhline(-1, color='lightgray', lw=0.5, alpha=0.8)
+    plt.axhline(0, color='lightgray', lw=0.5, alpha=0.8)
+    plt.axvline(1, color='lightgray', lw=0.5, alpha=0.8)
+    plt.axvline(-1, color='lightgray', lw=0.5, alpha=0.8)
+    plt.axvline(0, color='lightgray', lw=0.5, alpha=0.8)
+    plt.scatter(eigenvalues.real, eigenvalues.imag, s=0.02, zorder=10)
+    circle = plt.Circle((0, 0), spectral_radius, color='grey', ls='--', fill=False, lw=0.5)
     plt.gca().add_artist(circle)
-    plt.grid(linewidth=0.3)
-    plt.xlim(-1.5 * spectral_radius, 1.5 * spectral_radius)
-    plt.ylim(-1.5 * spectral_radius, 1.5 * spectral_radius)
+    plt.text(0.95, 0.05, f'$\\rho = {spectral_radius:.3f}$', transform=plt.gca().transAxes, ha='right', va='bottom', bbox=dict(boxstyle='round, pad=0.2', fc='white', ec='gray', lw=0.5), zorder=11)
+    plt.xlim(-1.1 * spectral_radius, 1.1 * spectral_radius)
+    plt.ylim(-1.1 * spectral_radius, 1.1 * spectral_radius)
     plt.tight_layout()
     plt.gca().set_aspect('equal', adjustable='box')
     path = Path(DATA_PATH) / folder / 'eigenvalues'
     path.mkdir(parents=True, exist_ok=True)
-    plt.savefig(path / f'agent_{id}.svg', format='svg')
+    plt.savefig(path / f'agent_{id}.pdf', format='pdf', bbox_inches='tight')
     plt.close()
 
 def plot_reservoir_outputs(agent, folder, id):
@@ -570,15 +581,23 @@ def plot_reservoir_outputs(agent, folder, id):
         folder (str): where to store the plot
         id (int): number of the agent
     """
-    plt.rcParams.update({'font.size': 16})
-    plt.figure(figsize=(15, 5))
-    plt.scatter(range(len(agent.output_log)), agent.output_log, s=10)
-    plt.xlabel('Time Step')
-    plt.ylabel('Reservoir Output')
+    plt.rcParams.update({
+        "text.usetex": True,
+        "font.size": 10,
+        "font.family": "serif"
+    })
+    plt.figure(figsize=(LATEX_TEXTWIDTH, LATEX_TEXTWIDTH/3))
+    plt.scatter(range(len(agent.output_log)), agent.output_log, s=2, zorder=2)
+    plt.ylim(-1.1, 1.1)
+    plt.xlabel('Time')
+    plt.ylabel('$o_t$')
+    plt.axhline(0, color='lightgray', linestyle='--', lw=0.5, alpha=0.8, zorder=1)
+    plt.axhline(1, color='lightgray', linestyle='--', lw=0.5, alpha=0.8, zorder=1)
+    plt.axhline(-1, color='lightgray', linestyle='--', lw=0.5, alpha=0.8, zorder=1)
     path = Path(DATA_PATH) / folder / 'reservoir_outputs'
     path.mkdir(parents=True, exist_ok=True)
-    plt.savefig(path / f'agent_{id}.svg', format='svg')
     plt.tight_layout()
+    plt.savefig(path / f'agent_{id}.pdf', format='pdf', bbox_inches='tight')
     plt.close()
 
 # TODO has to get a rework
