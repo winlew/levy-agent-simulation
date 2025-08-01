@@ -33,7 +33,7 @@ plt.plot(x, gauss, color='green', label="Gaussian")
 
 plt.ylim(0.5, 9)
 plt.yticks(range(1, 10))
-plt.grid(linewidth=0.3)
+plt.grid(ls="--", linewidth=0.4)
 plt.xlabel('$u$')
 plt.ylabel("Step Length")
 legend = plt.legend(loc='upper center', fancybox=True, edgecolor='gray', borderpad=0.3, facecolor='white', frameon=True, framealpha=1)
