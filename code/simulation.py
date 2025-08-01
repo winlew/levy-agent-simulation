@@ -52,7 +52,7 @@ class Simulation:
         self.fitnesses = np.asarray(np.sum(self.data['ate'], axis=1))
 
         if self.params.save:
-            save_simulation_context(folder, environment, self.params)
+            save_simulation_context(folder, environment) 
             save_data(folder, self.data, population)
 
         return self.fitnesses
