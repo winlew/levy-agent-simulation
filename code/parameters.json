@@ -1,6 +1,6 @@
 {
     "agent": {
-        "population_size": 10,
+        "population_size": 50,
         "type": "reservoir",
         "eat_radius": 0.5,
         "velocity": 1,
@@ -9,7 +9,7 @@
         "num_neurons": 1000,
         "burn_in_time": 1000,
         "mean": 0,
-        "standard_deviation": 0.03128
+        "standard_deviation": 0.0316
     },
     "environment": {
         "num_food": 0,
