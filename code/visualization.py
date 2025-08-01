@@ -119,7 +119,7 @@ def extract_high_resolution_frame(folder, frame, iteration):
     Args:
         folder (string): where the simulation data is saved
         frame (int): the timestep to be extracted
-        iteration (int): which iteration to extract from (starting from 0)
+        iteration (int): which iteration to extract
     """
     data, environment, params = load_data(folder)
     iteration_data = data.sel(iteration=iteration)
@@ -150,7 +150,11 @@ def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 70,
             opacity = 1-(i-1)/number_of_traces
         else:
             opacity = 1
-        distances = np.repeat(velocity * dt, params.population_size)
+        # traces end where agent body begins
+        if i == 1:
+            distances = np.repeat(velocity/2 * dt, params.population_size)
+        else:
+            distances = np.repeat(velocity * dt, params.population_size)
         trace_matrix = np.column_stack((data.sel(timestep=frame-i)['x_position'].values, data.sel(timestep=frame-i)['y_position'].values, data.sel(timestep=frame-i+1)['direction'].values, distances))
         plot_lines(env, trace_matrix, alpha=opacity, color_dict=color_dict, linewidth=0.5, ax=ax, multi_color=params.population_size == 10, plot_nozzles=False)
         i += 1
@@ -317,6 +321,7 @@ def get_color_dict():
                   "multi_color": multi_color}
     return color_dict
 
+# TODO remove
 def visualize_state(environment, agents):
     """
     Show agents in environment.
