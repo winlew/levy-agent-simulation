@@ -58,8 +58,6 @@ def update(frame, ax, env, params, data, color_dict):
     ax.set_ylim(0, env.size)
     ax.set_xticks([0,env.size])
     ax.set_yticks([0,env.size])
-    ax.set_xlabel('X', fontsize=20)
-    ax.set_ylabel('Y', fontsize=20)
     ax.set_title(f"t={frame}/{len(data.coords['timestep'])}")
     plot_traces(ax, env, params, data, frame, color_dict)
     render_state(ax, data, env, color_dict, params, frame)
@@ -83,8 +81,6 @@ def animate_single_iteration(i, environment, params, data, folder_name, tqdm_pos
     ax.set_ylim(0, environment.size)
     ax.set_xticks([0, environment.size])
     ax.set_yticks([0, environment.size])
-    ax.set_xlabel('X', fontsize = 20)
-    ax.set_ylabel('Y', fontsize = 20)
     ax.set_title(f"t=0/{len(data.coords['timestep'])}")
 
     render_state(ax, iteration_data, environment, color_dict, params, 0)
@@ -123,12 +119,20 @@ def extract_high_resolution_frame(folder, frame, iteration):
         frame (int): the timestep to be extracted
         iteration (int): which iteration to extract
     """
+    plt.rcParams.update({
+        "text.usetex": True,
+        "font.size": 10,
+        "font.family": "serif"
+    })
     data, environment, params = load_data(folder)
     iteration_data = data.sel(iteration=iteration)
     color_dict = get_color_dict()
-    plt.rcParams.update({'font.size': 14})
-    fig, ax = plt.subplots(figsize = (10, 10))
+    _, ax = plt.subplots(figsize = (LATEX_TEXTWIDTH, LATEX_TEXTWIDTH))
     update(frame, ax, environment, params, iteration_data, color_dict)
+    legend_elements = [plt.Line2D([0], [0], marker='o', color='w', label=f'{i}', markerfacecolor=color_dict['multi_color'][i], markersize=5) for i in range(10)]
+    legend = ax.legend(handles=legend_elements, loc='lower left', fontsize=8, fancybox=True, edgecolor='gray', borderpad=0.3, facecolor='white', frameon=True, framealpha=1, handletextpad=0.5)
+    legend.get_frame().set_linewidth(0.5)
+    plt.tight_layout()
     plt.savefig(config.DATA_PATH / f'{folder}/frame_{frame}.pdf', format='pdf')
 
 def plot_wall(env, ax, color_dict):
@@ -139,10 +143,10 @@ def plot_food(env, ax, color_dict, particle_scale=1):
     if len(env.food_positions) > 0:
         ax.scatter(env.food_positions[:,0], env.food_positions[:,1], color=color_dict["food_color"], label='Food', s=2**particle_scale)
 
-def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 70, fade = True):
+def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 100, fade = True):
     """
     Plot the agent traces for the last `number_of_traces` time steps.
-    Set 'number_of_traces' to params.simulation_steps to plot all traces.    
+    Set 'number_of_traces' to params.simulation_steps to plot all traces.
     """
     i = 1
     velocity = params.velocity
@@ -186,8 +190,9 @@ def plot_circles(env, data_matrix, alpha, color_dict, ax, multi_color):
         y = row[1]
         r = row[2]
 
-        # plot the number of the agent inside the circle
-        ax.text(x, y, str(i), fontsize=7, ha='center', va='center', zorder=4)
+        if not multi_color:
+            # plot the number of the agent inside the circle
+            ax.text(x, y, str(i), fontsize=7, ha='center', va='center', zorder=4)
 
         # 4th row has information about whether agent ate
         if len(row) == 4 and row[3] != 0:
