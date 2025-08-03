@@ -18,11 +18,11 @@ if __name__ == '__main__':
             while len(agent_indexes) < 10:
                 agent_indexes.append(int(input(f'Enter agent index ({len(agent_indexes)}/10): ')))
             extracted_folder = extract_agents(folder, agent_indexes)
-            extract_gif_frames(extracted_folder, 'animation_1.gif')
             if not extracted_folder:
                 print('failed')
                 exit()
             visualize(extracted_folder)
+            extract_gif_frames(extracted_folder, 'animation_1.gif')
             print('success')
         else:
             print('No action connected to input.')
