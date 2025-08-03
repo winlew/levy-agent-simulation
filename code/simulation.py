@@ -164,5 +164,5 @@ def record_time(func):
 
 if __name__ == '__main__':
     from data_io import extract_gif_frames
-    extract_gif_frames('d', 'animation_1_it2.gif')
+    extract_gif_frames('001500_10_extracted', 'animation_1.gif')
     pass

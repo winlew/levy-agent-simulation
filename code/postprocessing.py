@@ -25,6 +25,6 @@ if __name__ == '__main__':
             print('success')
         else:
             print('No action connected to input.')
-        mode = input("Type:\n 'f' to extract frame type " \
+        mode = input("Type:\n 'f' to extract frame" \
                           "\n 'a' to extract agent trajectories"
                           "\n 'q' to quit.\n")
