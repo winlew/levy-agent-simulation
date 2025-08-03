@@ -130,7 +130,7 @@ def extract_high_resolution_frame(folder, frame, iteration):
     _, ax = plt.subplots(figsize = (LATEX_TEXTWIDTH, LATEX_TEXTWIDTH))
     update(frame, ax, environment, params, iteration_data, color_dict)
     legend_elements = [plt.Line2D([0], [0], marker='o', color='w', label=f'{i}', markerfacecolor=color_dict['multi_color'][i], markersize=5) for i in range(10)]
-    legend = ax.legend(handles=legend_elements, loc='lower left', fontsize=8, fancybox=True, edgecolor='gray', borderpad=0.3, facecolor='white', frameon=True, framealpha=1, handletextpad=0.5)
+    legend = ax.legend(handles=legend_elements, loc='lower left', ncols=2, fontsize=8, fancybox=True, edgecolor='gray', borderpad=0.3, facecolor='white', frameon=True, framealpha=1, handletextpad=0.5)
     legend.get_frame().set_linewidth(0.5)
     plt.tight_layout()
     plt.savefig(config.DATA_PATH / f'{folder}/frame_{frame}.pdf', format='pdf')
