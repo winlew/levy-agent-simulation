@@ -104,13 +104,44 @@ def extract_agents(folder, agent_indexes):
     trimmed_data = data.isel(agent=agent_indexes)
     save_simulation_context(safe_folder, environment)
     save_data(safe_folder, trimmed_data, None)
-    params_file = config.DATA_PATH / safe_folder / 'parameters.json'
-    with open(params_file, 'r') as f:
+    params_file_path = config.DATA_PATH / safe_folder / 'parameters.json'
+    with open(params_file_path, 'r') as f:
         params_dict = json.load(f)
     params_dict['agent']['population_size'] = len(agent_indexes)
-    with open(params_file, 'w') as f:
+    with open(params_file_path, 'w') as f:
         json.dump(params_dict, f, indent=2)
     return safe_folder
+
+def combine_agents(folders, agent_indexes, output_folder):
+    """
+    Extracts agent trajectories from multiple runs and combines them into a single run.
+    Assumes that all simulations have the same simulation length.
+
+    Args:
+        folders (list): list of strings of folder names
+        agent_indexes (list): list of list of int
+        output_folder (string): where to store output
+    """
+    if len(folders) != len(agent_indexes):
+        raise ValueError("folders and agent_indexes must have the same length")
+    
+    # now load the data of each folder and extract the agent trajectories
+    all_data = []
+    for folder, indexes in zip(folders, agent_indexes):
+        data, environment, _ = load_data(folder)
+        trimmed_data = data.isel(agent=indexes)
+        all_data.append(trimmed_data)
+    # concatenate the data along the agent dimension
+    combined_data = xr.concat(all_data, dim='agent')
+    # save the combined data in a new folder
+    save_simulation_context(output_folder, environment)
+    save_data(output_folder, combined_data, None)
+    params_file_path = config.DATA_PATH / output_folder / 'parameters.json'
+    with open(params_file_path, 'r') as f:
+        params_dict = json.load(f)
+    params_dict['agent']['population_size'] = combined_data.sizes['agent']
+    with open(params_file_path, 'w') as f:
+        json.dump(params_dict, f, indent=2)
     
 def save_simulation_context(folder, environment):
     """

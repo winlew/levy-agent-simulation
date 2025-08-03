@@ -1,31 +1,25 @@
 from visualization import extract_high_resolution_frame, visualize
-from data_io import extract_agents, extract_gif_frames
+from data_io import extract_agents, extract_gif_frames, combine_agents
 
 if __name__ == '__main__':
-    folder = input('Enter name of folder to post process: ')
-    mode = input("Type:\n 'f' to extract frame " \
-                            "\n 'a' to extract agent trajectories"
-                            "\n 'q' to quit\n")
+    # There are three postprocessing procedures. 
+    #   1. Extract High Resolution Frame
+    #   2. Extract Agents
+    #   3. Combine Agent Trajectories from Multiple Runs
 
-    while (mode != 'q'):
-        if mode == 'f':
-            frame = int(input('Timestep: '))
-            iteration = int(input('From iteration: '))
-            extract_high_resolution_frame(folder, frame, iteration)
-            print('success')
-        elif mode == 'a':
-            agent_indexes = []
-            while len(agent_indexes) < 10:
-                agent_indexes.append(int(input(f'Enter agent index ({len(agent_indexes)}/10): ')))
-            extracted_folder = extract_agents(folder, agent_indexes)
-            if not extracted_folder:
-                print('failed')
-                exit()
-            visualize(extracted_folder)
-            extract_gif_frames(extracted_folder, 'animation_1.gif')
-            print('success')
-        else:
-            print('No action connected to input.')
-        mode = input("Type:\n 'f' to extract frame" \
-                          "\n 'a' to extract agent trajectories"
-                          "\n 'q' to quit.\n")
+    folder = 'COMB'
+    frame = 265
+    iteration = 0
+    extract_high_resolution_frame(folder, frame, iteration)
+
+    # folder = 'TODO'
+    # agent_indexes = []
+    # extracted_folder = extract_agents(folder, agent_indexes)
+    # visualize(extracted_folder)
+    # extract_gif_frames(extracted_folder, 'animation_1.gif')
+
+    # folders = ['003160_1', '003160_2', '003160_3', '003160_4']
+    # agent_indexes = [[8, 18, 19, 6, 20], [27], [88, 7, 85], [12]]
+    # combine_agents(folders, agent_indexes, 'COMB')
+    # visualize('COMB')
+    # extract_gif_frames('COMB', 'animation_1.gif')
