@@ -99,7 +99,7 @@ def extract_agents(folder, agent_indexes):
     """
     Trim the data to only contain the selected agents and safe it in a new folder.
     """
-    safe_folder = f"{folder}_{len(agent_indexes)}_extracted"
+    safe_folder = f"{folder}_EXT"
     data, environment, _ = load_data(folder)
     trimmed_data = data.isel(agent=agent_indexes)
     save_simulation_context(safe_folder, environment)
