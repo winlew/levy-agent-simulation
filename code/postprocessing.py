@@ -1,5 +1,5 @@
 from visualization import extract_high_resolution_frame, visualize
-from data_io import extract_agents
+from data_io import extract_agents, extract_gif_frames
 
 if __name__ == '__main__':
     folder = input('Enter name of folder to post process: ')
@@ -18,6 +18,7 @@ if __name__ == '__main__':
             while len(agent_indexes) < 10:
                 agent_indexes.append(int(input(f'Enter agent index ({len(agent_indexes)}/10): ')))
             extracted_folder = extract_agents(folder, agent_indexes)
+            extract_gif_frames(extracted_folder, 'animation_1.gif')
             if not extracted_folder:
                 print('failed')
                 exit()
