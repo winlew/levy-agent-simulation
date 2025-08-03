@@ -7,13 +7,18 @@ if __name__ == '__main__':
     #   2. Extract Agents
     #   3. Combine Agent Trajectories from Multiple Runs
 
-    folder = 'COMB'
-    frame = 265
+    # folder = 'COMB'
+    # frame = 265
+    # iteration = 0
+    # extract_high_resolution_frame(folder, frame, iteration)
+    # ---
+    folder = '003700_EXT'
+    frame = 129
     iteration = 0
     extract_high_resolution_frame(folder, frame, iteration)
 
-    # folder = 'TODO'
-    # agent_indexes = []
+    # folder = '003700'
+    # agent_indexes = [10, 8, 2, 36, 3, 5, 45, 16, 11, 34]
     # extracted_folder = extract_agents(folder, agent_indexes)
     # visualize(extracted_folder)
     # extract_gif_frames(extracted_folder, 'animation_1.gif')
