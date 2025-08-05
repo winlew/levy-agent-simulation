@@ -599,6 +599,8 @@ def plot_reservoir_outputs(agent, folder, id):
     plt.axhline(0, color='lightgray', linestyle='--', lw=0.5, alpha=0.8, zorder=1)
     plt.axhline(1, color='lightgray', linestyle='--', lw=0.5, alpha=0.8, zorder=1)
     plt.axhline(-1, color='lightgray', linestyle='--', lw=0.5, alpha=0.8, zorder=1)
+    # add this line to create triangle marker for certain time step
+    # plt.scatter(265, 1.23, marker='v', s=30, edgecolor='black', facecolors='none', zorder=10, clip_on=False, linewidths=0.7)
     path = Path(DATA_PATH) / folder / 'reservoir_outputs'
     path.mkdir(parents=True, exist_ok=True)
     plt.tight_layout()
@@ -687,7 +689,8 @@ if __name__ == '__main__':
     # reservoir = Reservoir(10)
     # draw_reservoir_graph(reservoir, '0')
     # extract_agent_trajectory('0032', 1, 5)
-    sigma = 0.032
-    from agent import Reservoir
-    reservoir = Reservoir(time_steps=100, num_neurons=1000, burn_in_time=10, mean=0, standard_deviation=sigma)
-    plot_activity(reservoir, 'reservoirs', sigma)
+    # sigma = 0.032
+    # from agent import Reservoir
+    # reservoir = Reservoir(time_steps=100, num_neurons=1000, burn_in_time=10, mean=0, standard_deviation=sigma)
+    # plot_activity(reservoir, 'reservoirs', sigma)
+    visualize_reservoir('003160_4')
