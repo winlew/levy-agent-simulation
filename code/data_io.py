@@ -98,6 +98,12 @@ def update_data(data, iteration, trajectory_log):
 def extract_agents(folder, agent_indexes):
     """
     Trim the data to only contain the selected agents and safe it in a new folder.
+
+    Args:
+        folder (str): folder to load the data from
+        agent_indexes (list): list of int, indexes of the agents to extract
+    Returns:
+        safe_folder (str): folder where the extracted data is saved
     """
     safe_folder = f"{folder}_EXT"
     data, environment, _ = load_data(folder)
@@ -145,9 +151,9 @@ def combine_agents(folders, agent_indexes, output_folder):
     
 def save_simulation_context(folder, environment):
     """
-    Saves the immutable settings:
+    Saves the immutable settings
     - the environment
-    - simulation parameters.
+    - simulation parameters
 
     Args:
         folder (str): folder to save the simulation context in

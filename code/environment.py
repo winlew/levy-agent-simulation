@@ -7,7 +7,7 @@ import pygame
 
 class Environment:
     """
-    A quadratic 2D environment with food particles and periodic boundary conditions.
+    A quadratic 2D plane
     - generates the positions of the food particles
     - finds the closest food particle to an agent
     """
@@ -28,7 +28,7 @@ class Environment:
         self.food_positions = self.generate_food_positions(params.border_buffer, params.food_buffer)
         
         self.walls = []
-
+        # add walls around edges of environment if resetting b.c. are activated
         if params.resetting_boundary:
             self.add_wall(np.array([0, 0]), np.array([0, params.size]))
             self.add_wall(np.array([0, 0]), np.array([params.size, 0]))
@@ -48,7 +48,7 @@ class Environment:
     def generate_food_positions(self, border_buffer, food_buffer):
         """
         Randomly generate positions for the food particles.
-        But enforce a minimum distance between them and the border of the environment.
+        But enforce a minimum distance between them and the border of the environment if specified.
 
         Args:
             border_buffer (float): minimum distance between food particles and the border of the environment
@@ -80,7 +80,7 @@ class Environment:
                     break
             
             if failed_attempts > max_attempts:
-                raise ValueError("Failed to generate food positions.")
+                raise ValueError("Failed to generate food positions. Consider decreasing food buffer or the number of food particles or increasing the environment size.")
             
             if position_valid:
                 food_positions = np.vstack([food_positions, [suggested_food_x_position, suggested_food_y_position]])
@@ -101,8 +101,6 @@ class Environment:
             closest_index (int): index of the closest food particle in the food_positions array
         """
 
-        # blind agent does not see anything
-        # eat radius matters as well!
         if self.food_positions.size == 0:
             return None, None, None
 
@@ -158,14 +156,3 @@ class Environment:
             pygame.display.flip()   
         pygame.quit()
         self.num_food = len(self.food_positions)
-
-
-if __name__ == '__main__':
-    from visualization import visualize_state
-    from parameters import Params
-    import matplotlib.pyplot as plt
-
-    params = Params.from_json('parameters.json')
-    env = Environment(params)
-    ax = visualize_state(env, None)
-    plt.show()

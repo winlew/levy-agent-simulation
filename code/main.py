@@ -1,7 +1,6 @@
 from simulation import Simulation
 from parameters import Params
-from visualization import visualize, plot_fitness_log
-from data_io import extract_gif_frames
+from visualization import visualize
 
 def main():
     """
@@ -13,12 +12,10 @@ def main():
 
     # execute simulation
     sim = Simulation(params, params.agent)
-    fitnesses = sim.run(folder)
+    _ = sim.run(folder)
     
-    # visualize results
+    # animate results
     visualize(folder)
-    plot_fitness_log(fitnesses, folder)
-    extract_gif_frames(folder, 'animation_1.gif')
 
 if __name__ == '__main__':
     main()

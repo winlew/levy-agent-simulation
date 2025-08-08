@@ -1,18 +1,17 @@
 import numpy as np
-from tqdm import tqdm
 from utils import Point, rectangle_from_points, inside_rectangle, intersect
 import networkx as nx
 
 class Agent:
     """
     An agent that navigates in an environment and eats food particles.
-    Agents move with a constant velocity in the environment.
-    The positioning of the agent in the environment is described by:
-    - its 2D position
-    - the direction it faces in world perspective (0 to 2pi).
-    The agent eats food particles that are within its eat radius.
+    Properties:
+        - body size of eat_radius
+        - position (x,y)
+        - orientation [0, 2pi]
+        - constant speed
 
-    All agents are subclasses of this class and follow a simple logic at each time step
+    All agents types are subclasses of this class and follow a simple logic at each time step
     - perceive the environment
     - choose an action
     - perform the action.
@@ -21,7 +20,7 @@ class Agent:
     def __init__(self, params):
         self.params = params
         self.eat_radius = params.eat_radius
-        self.velocity = params.velocity
+        self.speed = params.speed
         self.direction = np.random.uniform(0, 2*np.pi)
         self.position = np.array(np.random.uniform(0, params.size, 2))
         # position of the agent at the last time step
@@ -33,6 +32,7 @@ class Agent:
         self.meals = 0
         # whether the agent ate at the previous time step
         self.ate = False
+        # if agent encounters a wall
         self.sensed_wall = False
     
     def perceive(self, environment):
@@ -51,7 +51,7 @@ class Agent:
 
     def check_path(self, environment):
         """
-        Check whether on the path from the last position to the current position there was a food particle.
+        Check whether there was a food particle on the path from the last position to the current position.
         
         Constructs a rectangle between the past and current position of the agent. Where
         - one side is two times the eat radius long and perpendicular to the direction of movement and
@@ -64,7 +64,7 @@ class Agent:
         # do not check path on first step of every iteration
         if self.last_position is None:
             return
-        # do not check_path if boundary got crossed 
+        # TODO: do not check_path if boundary got crossed 
         if abs(self.last_position[0] - self.position[0]) >  environment.size / 2 or abs(self.last_position[1] - self.position[1]) > environment.size / 2:
             return
         point1 = Point(self.last_position[0], self.last_position[1])
@@ -122,7 +122,7 @@ class LévyAgent(Agent):
     Movement:
     - agent chooses a random direction
     - agent chooses a step length according to a power law distribution
-    - agent travels in the chosen direction for step length / velocity time steps
+    - agent travels in the chosen direction for step length / speed time steps
     """
     
     def __init__(self, params):
@@ -152,7 +152,7 @@ class LévyAgent(Agent):
             environment (Environment): the environment the agent navigates in
         """
         self.pending_steps -= 1
-        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
+        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.speed * self.params.delta_t
         self.move(new_position, environment)
 
     def reset(self):
@@ -166,7 +166,7 @@ class ExponentialAgent(Agent):
     Movement:
     - agent chooses a random direction
     - agent chooses a step length according to an exponential distribution
-    - agent travels in the chosen direction for step length / velocity time steps
+    - agent travels in the chosen direction for step length / speed time steps
     """
 
     def __init__(self, params):
@@ -195,7 +195,7 @@ class ExponentialAgent(Agent):
             environment (Environment): the environment the agent navigates in
         """
         self.pending_steps -= 1
-        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
+        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.speed * self.params.delta_t
         self.move(new_position, environment)
 
     def reset(self):
@@ -209,7 +209,7 @@ class BrownianAgent(Agent):
     Movement:
     - agent chooses a random direction
     - agent chooses a step length according to a normal distribution
-    - agent travels in the chosen direction for step length / velocity time steps
+    - agent travels in the chosen direction for step length / speed time steps
     """
 
     def __init__(self, params):
@@ -239,7 +239,7 @@ class BrownianAgent(Agent):
             environment (Environment): the environment the agent navigates in
         """
         self.pending_steps -= 1
-        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
+        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.speed * self.params.delta_t
         self.move(new_position, environment)
 
     def reset(self):
@@ -265,7 +265,7 @@ class BallisticAgent(Agent):
         Args:
             environment (Environment): the environment the agent navigates in
         """
-        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
+        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.speed * self.params.delta_t
         self.move(new_position, environment)
 
 class ReservoirAgent(Agent):
@@ -306,7 +306,7 @@ class ReservoirAgent(Agent):
             environment (Environment): the environment the agent navigates in
             _ (None): unused
         """
-        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.velocity * self.params.delta_t
+        new_position = self.position + np.array([np.cos(self.direction), np.sin(self.direction)]) * self.speed * self.params.delta_t
         self.move(new_position, environment)
 
     def reset(self):
@@ -319,8 +319,6 @@ class ReservoirAgent(Agent):
 class Reservoir():
     """
     A set of neurons that are randomly connected to each other.
-    The neurons are randomly activated at the beginning and can be in two states: on or off.
-    A neuron is activated if exactly one of its neighbors was active at the previous time step.
     """
 
     def __init__(self, time_steps, num_neurons=1000, burn_in_time=1000, mean=0, standard_deviation=0.032, use_small_world=False, k=10, p=0.1, use_modular_network=False):
@@ -359,7 +357,7 @@ class Reservoir():
         Kickstart, then let the reservoir run for burn_in_time steps.
         """
         burn_in_state_matrix = np.zeros((self.burn_in_time, self.num_neurons), dtype=float)
-        # initialize neuron states from distribution
+        # initialize neuron states
         burn_in_state_matrix[0] = np.tanh(np.random.normal(self.mean, self.standard_deviation, self.num_neurons))
         for t in range(1, self.burn_in_time):
             burn_in_state_matrix[t] = np.tanh(np.dot(self.weight_matrix, burn_in_state_matrix[t - 1]))

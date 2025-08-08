@@ -1,13 +1,12 @@
 from matplotlib import pyplot as plt
 import numpy as np
-from met_brewer import met_brew
 import matplotlib.animation as animation
 from pathlib import Path
 from tqdm import tqdm
 import config
 import multiprocessing as mp
 from agent import ReservoirAgent, LévyAgent
-from data_io import load_data, load_population, extract_gif_frames
+from data_io import load_data, load_population 
 from config import DATA_PATH, LATEX_TEXTWIDTH
 from environment import Environment
 from parameters import Params
@@ -16,7 +15,7 @@ import igraph as ig
 
 def visualize(folder):
     """
-    Animate a simulation.
+    Animate a simulation and make plots of agent properties.
     Args:
         folder (str): folder where the simulation results are stored
     """
@@ -50,7 +49,6 @@ def visualize_reservoir(folder):
         # not worth the effort
         # plot_weights(agent.model, folder, i)
         # draw_reservoir_graph(agent.model, folder, i)
-
 
 def update(frame, ax, env, params, data, color_dict):
     ax.cla()
@@ -149,7 +147,7 @@ def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 100
     Set 'number_of_traces' to params.simulation_steps to plot all traces.
     """
     i = 1
-    velocity = params.velocity
+    speed = params.speed
     dt = params.delta_t
     while(frame - i >= 0 and i <= number_of_traces):
         if fade:
@@ -158,9 +156,9 @@ def plot_traces(ax, env, params, data, frame, color_dict, number_of_traces = 100
             opacity = 1
         # traces end where agent body begins
         if i == 1:
-            distances = np.repeat(velocity/2 * dt, params.population_size)
+            distances = np.repeat(speed/2 * dt, params.population_size)
         else:
-            distances = np.repeat(velocity * dt, params.population_size)
+            distances = np.repeat(speed * dt, params.population_size)
         trace_matrix = np.column_stack((data.sel(timestep=frame-i)['x_position'].values, data.sel(timestep=frame-i)['y_position'].values, data.sel(timestep=frame-i+1)['direction'].values, distances))
         plot_lines(env, trace_matrix, alpha=opacity, color_dict=color_dict, linewidth=0.5, ax=ax, multi_color=params.population_size == 10, plot_nozzles=False)
         i += 1
@@ -328,7 +326,7 @@ def get_color_dict():
                   "multi_color": multi_color}
     return color_dict
 
-# TODO remove
+# deprecated
 def visualize_state(environment, agents):
     """
     Show agents in environment.
@@ -436,7 +434,7 @@ def extract_agent_trajectory(folder, iteration, agent_number, buffer = 5):
     params = Params(
         num_food = 0,
         size = max(x_max - x_min, y_max - y_min) + 2*buffer,
-        velocity = params.velocity,
+        speed = params.speed,
         eat_radius = params.eat_radius,
         mu = 2,
         alpha = 1,

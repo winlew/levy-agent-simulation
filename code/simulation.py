@@ -4,7 +4,6 @@ from agent import *
 from data_io import update_data, initialize_data, save_simulation_context, save_data
 import config
 import time
-from tqdm import tqdm
 
 class Simulation:
     """

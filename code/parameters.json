@@ -1,9 +1,9 @@
 {
     "agent": {
         "population_size": 50,
-        "type": "reservoir",
+        "type": "levy",
         "eat_radius": 0.5,
-        "velocity": 1,
+        "speed": 1,
         "mu": 2,
         "alpha": 0.3,
         "num_neurons": 1000,
@@ -20,7 +20,7 @@
         "seed": 34
     },
     "simulation": {
-        "total_time": 299,
+        "total_time": 49,
         "delta_t": 1,
         "iterations": 1,
         "save": true

@@ -1,4 +1,4 @@
-# Creates plots to compare the distributions
+# Creates plots to compare the agent step length distributions
 
 import numpy as np
 import matplotlib.pyplot as plt
